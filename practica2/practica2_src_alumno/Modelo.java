@@ -57,7 +57,15 @@ public class Modelo {
         notify(Aspecto.ALL);
     }
 
+    public void addAssociation(Association a) {
+        associations.add(a);
+        notify(Aspecto.ASSOCIATION);
+        notify(Aspecto.ALL);
+    }
+
     public void removeClass(Class c) {
+        associations.removeAll(c.associations());
+        c.deleteAssociations();
         classes.remove(c);
         notify(Aspecto.CLASS);
         notify(Aspecto.ALL);
@@ -70,6 +78,11 @@ public class Modelo {
 
     public void selectClass(Class c, boolean selected) {
         c.setSelected(selected);
+        notify(Aspecto.ALL);
+    }
+
+    public void hoverClass(Class c, boolean candidate) {
+        c.setCandidate(candidate);
         notify(Aspecto.ALL);
     }
 

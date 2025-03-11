@@ -4,6 +4,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 
 //otros import
 
@@ -18,7 +19,9 @@ public class Class {
 	private int width;			// Ancho clase en el diagrma
 	private int height;			// Alto  clase en el diagrama
 	private boolean selected;	// Indica si la clase está seleccionada
-	String nom;					// Nombre de la clase
+	private boolean candidate;	// Indica si es candidata a formar para de la asociación
+	private final String nom;	// Nombre de la clase
+	private final ArrayList<Association> associations;
 	
 	/** Constructor */
 	public Class(int x, int y) {
@@ -26,6 +29,8 @@ public class Class {
 		this.y = y;
 		this.nom = "Class " + String.valueOf(id);	
 		this.selected = false;
+		this.candidate = false;
+		this.associations = new ArrayList<>();
 		++id;
 	}
 	
@@ -37,10 +42,13 @@ public class Class {
 		g2.setFont(font);
 		
 		Color fill_color = Color.WHITE;
-		Color bord_color = new Color(0, 0, 128);
+		Color bord_color = new Color(0, 112, 112);
 		if(selected) {
 			fill_color = new Color(0, 255, 255);
-			bord_color = new Color(0, 112, 112);
+		}
+		if(candidate) {
+			fill_color = new Color(144, 240, 144);
+			bord_color = new Color(0, 112, 0);
 		}
 
 		int padding_h = 16, padding_v = 4;
@@ -81,17 +89,34 @@ public class Class {
 
 	public int getHeight() { return this.height; }
 
+	public ArrayList<Association> associations() { return associations; }
+
 	/** Setters */
 	public void setPosition(int x, int y) {
 		this.x = x;
 		this.y = y;
+		for(Association a : associations) {
+			a.changePosition();
+		}
 	}
 
 	public void setSelected(boolean selected) {
 		this.selected = selected;
 	}
 
+	public void setCandidate(boolean candidate) {
+		this.candidate = candidate;
+	}
+
 	/** Funciones auxiliares */
+	public void deleteAssociations() {
+		associations.clear();
+	}
+
+	public void addAssociation(Association a) {
+		associations.add(a);
+	}
+
 	public boolean contienePunto(int px, int py) {
 		int x_ = x - width/2;
 		int y_ = y - height/2;

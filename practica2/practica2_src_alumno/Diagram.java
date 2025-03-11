@@ -14,7 +14,9 @@ public class Diagram
 	/** Atributos */
 	private final Modelo modelo;	// Modelo
 	public Class clase; 			// Clase seleccionada
+	public Class lastHover;
 	private boolean dragging;		// Arrastrando el ratón
+	private boolean associating;	// Creando asociación
 	private int lastX, lastY;		// Últimas coordenadas del ratón
 
 
@@ -23,6 +25,7 @@ public class Diagram
 		setBorder(BorderFactory.createLineBorder(Color.black));
 		this.modelo = modelo;
 		dragging = false;
+		associating = false;
 	}
 
 	/** Iniciar */
@@ -53,9 +56,19 @@ public class Diagram
 		modelo.selectClass(c, selected);
 	}
 
+	/** Añadir una asociación */
+	public void addAssociation(Association a, Class c1, Class c2) {
+		modelo.addAssociation(a);
+		c1.addAssociation(a);
+		c2.addAssociation(a);
+	}
+
 	@Override
 	public void paint(Graphics g) {
 		super.paintComponent(g);
+		for(Association a : modelo.associations()) {
+			a.draw(g);
+		}
 		for(Class c : modelo.classes()) {
 			c.draw(g);
 		}
@@ -68,18 +81,34 @@ public class Diagram
 	@Override
 	public void mousePressed(MouseEvent e) {
 		if(e.getButton() == MouseEvent.BUTTON1) {
-			if(punteroEnClase(e.getX(), e.getY()) != null) {
+			Class c = punteroEnClase(e.getX(), e.getY());
+			if(c != null && clase != c) {
 				dragging = true;
+			} else if(c != null) {
+				associating = true;
 			}
 		}
 	}
     
 	@Override
     public void mouseReleased(MouseEvent e) {
+		Class c = punteroEnClase(e.getX(), e.getY());
+		
 		if(dragging && e.getButton() == MouseEvent.BUTTON1) {
 			dragging = false;
-			Class c = punteroEnClase(e.getX(), e.getY());
-			if(c != null) moveClass(c, e.getX(), e.getY());
+			if(c != null) {
+				moveClass(c, e.getX(), e.getY());
+			}
+		} else if(associating && e.getButton() == MouseEvent.BUTTON1) {
+			associating = false;
+			if(c != null) {
+				addAssociation(
+					new Association(clase.getX(), clase.getY(), c.getX(), c.getY(), clase, c),
+					clase,
+					c
+				);
+				modelo.hoverClass(c, false);
+			}
 		}
 		lastX = e.getX();
 		lastY = e.getY();
@@ -112,7 +141,17 @@ public class Diagram
 	public void mouseDragged(MouseEvent e) {
 		if(dragging) {
 			Class c = punteroEnClase(e.getX(), e.getY());
-			if(c != null) moveClass(c, e.getX(), e.getY());
+			if(c != null) {
+				moveClass(c, e.getX(), e.getY());
+			}
+		} else if(associating) {
+			Class c = punteroEnClase(e.getX(), e.getY());
+			if(c != null) {
+				modelo.hoverClass(c, true);
+				lastHover = c;
+			} else if(lastHover != null) {
+				modelo.hoverClass(lastHover, false);
+			}
 		}
 	}
     
