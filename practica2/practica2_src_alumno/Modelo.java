@@ -64,8 +64,11 @@ public class Modelo {
     }
 
     public void removeClass(Class c) {
-        associations.removeAll(c.associations());
-        c.deleteAssociations();
+        if(!c.associations().isEmpty()) {
+            associations.removeAll(c.associations());
+            c.deleteAssociations();
+            notify(Aspecto.ASSOCIATION);
+        }
         classes.remove(c);
         notify(Aspecto.CLASS);
         notify(Aspecto.ALL);

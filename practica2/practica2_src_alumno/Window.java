@@ -36,14 +36,12 @@ public class Window implements ActionListener {
       	panel.add(diagram, c);
   
 		//creamos la etiqueta para contar clases y lo ponemos en el panel 
-	    //labelNClasses = new JLabel("Classes: " + modelo.getNClasses());
 		labelNClasses = new Etiqueta("Classes: " + modelo.getNClasses(), modelo, Aspecto.CLASS);
 		labelNClasses.init();
 		setGridProperties(0,4,2,1,0,0,GridBagConstraints.HORIZONTAL);
         panel.add(labelNClasses, c);
         
 		//creamos la etiqueta para contar asociaciones y lo ponemos en el panel 
-	    //labelNAssociations = new JLabel("Associations: " + modelo.getNAssociations());
 		labelNAssociations = new Etiqueta("Associations: " + modelo.getNAssociations(), modelo, Aspecto.ASSOCIATION);
 		labelNAssociations.init();
 		setGridProperties(2,4,2,1,0,0,GridBagConstraints.HORIZONTAL);
@@ -70,14 +68,6 @@ public class Window implements ActionListener {
 		diagram.addClass(panel.getWidth() / 2, panel.getHeight() / 2);
 		diagram.requestFocusInWindow();
 	}
-	
-	/**public void updateNClasses(Diagram d){
-		labelNClasses.setText("Classes: " + d.getNClasses());
-	}*/
-	
-	/**public void updateNAssociations(Diagram d){
-		labelNAssociations.setText("Associations: " + diagram.getNAssociations());
-	}*/
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> {
@@ -118,7 +108,7 @@ public class Window implements ActionListener {
 		public void update() {
 			setText(switch (asp) {
             	case CLASS -> "Classes: " + modelo.getNClasses();
-            	case ASSOCIATION -> "Classes: " + modelo.getNClasses();
+            	case ASSOCIATION -> "Associations: " + modelo.getNAssociations();
             	default -> getText();
         	});
 			repaint();
