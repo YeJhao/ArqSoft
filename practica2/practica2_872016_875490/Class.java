@@ -4,7 +4,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.util.ArrayList;
+import java.util.Vector;
 
 //otros import
 
@@ -21,7 +21,7 @@ public class Class {
 	private boolean selected;	// Indica si la clase está seleccionada
 	private boolean candidate;	// Indica si es candidata a formar para de la asociación
 	private final String nom;	// Nombre de la clase
-	private final ArrayList<Association> associations;
+	private final Vector<Association> associations;
 	
 	/** Constructor */
 	public Class(int x, int y) {
@@ -30,7 +30,7 @@ public class Class {
 		this.nom = "Class " + String.valueOf(id);	
 		this.selected = false;
 		this.candidate = false;
-		this.associations = new ArrayList<>();
+		this.associations = new Vector<>();
 		++id;
 	}
 	
@@ -89,7 +89,7 @@ public class Class {
 
 	public int getHeight() { return this.height; }
 
-	public ArrayList<Association> associations() { return associations; }
+	public Vector<Association> associations() { return associations; }
 
 	/** Setters */
 	public void setPosition(int x, int y) {

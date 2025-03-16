@@ -8,8 +8,6 @@ public class Window implements ActionListener {
 	private Diagram diagram; //superficie de dibujo
 	private final JPanel panel; 
 	private final GridBagConstraints c;
-	//private JLabel labelNClasses;
-	//private JLabel labelNAssociations;
 	private Etiqueta labelNClasses;
 	private Etiqueta labelNAssociations;
 	
@@ -52,8 +50,7 @@ public class Window implements ActionListener {
 		return panel;
 	}
 	
-	private void setGridProperties(int gridx, int gridy, int gridwidth, int gridheight, double weightx, double weighty, int fill)
-{
+	private void setGridProperties(int gridx, int gridy, int gridwidth, int gridheight, double weightx, double weighty, int fill) {
      		c.gridx = gridx;
         	c.gridy = gridy;
         	c.gridwidth = gridwidth;

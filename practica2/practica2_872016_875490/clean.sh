@@ -1,2 +1,2 @@
 #!/bin/bash
-rm *.class
+rm -rf bin

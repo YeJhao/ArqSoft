@@ -1,9 +1,9 @@
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 public class Modelo {
 
@@ -18,25 +18,25 @@ public class Modelo {
     }
 
     /** Atributos */
-    private final ArrayList<Class> classes;                     // clases
-    private final ArrayList<Association> associations;          // asociaciones
+    private final Vector<Class> classes;                     // clases
+    private final Vector<Association> associations;          // asociaciones
     private final Map<Aspecto, Set<Observador>> observadores;   // observadores suscritos
 
     
     /** Constructor privado */
     private Modelo() {
-        classes = new ArrayList<>();
-        associations = new ArrayList<>();
+        classes = new Vector<>();
+        associations = new Vector<>();
         observadores = new HashMap<>();
     }
 
     /** Getter classes */
-    public ArrayList<Class> classes() {
+    public Vector<Class> classes() {
         return classes;
     }
 
     /** Setter classes */
-    public ArrayList<Association> associations() {
+    public Vector<Association> associations() {
         return associations;
     }
 

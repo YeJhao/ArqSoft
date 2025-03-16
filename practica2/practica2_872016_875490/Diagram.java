@@ -1,6 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
+import java.util.Vector;
 import javax.swing.*;
 
 public class Diagram 
@@ -19,6 +19,9 @@ public class Diagram
 	private boolean associating;	// Creando asociación
 	private int lastX, lastY;		// Últimas coordenadas del ratón
 
+	private final Vector<Class> classes;
+	private final Vector<Association> associations;
+
 
 	/** Constructor */
 	public Diagram(Modelo modelo) {	
@@ -26,6 +29,8 @@ public class Diagram
 		this.modelo = modelo;
 		dragging = false;
 		associating = false;
+		classes = modelo.classes();
+		associations = modelo.associations();
 	}
 
 	/** Iniciar */
@@ -43,6 +48,9 @@ public class Diagram
 
 	/** Quitar una clase */
 	public void removeClass(Class c) {
+		if(lastHover == c) {
+			lastHover = null;
+		}
 		modelo.removeClass(c);
 	}
 
@@ -66,11 +74,15 @@ public class Diagram
 	@Override
 	public void paint(Graphics g) {
 		super.paintComponent(g);
-		for(Association a : modelo.associations()) {
+		for(Association a : associations) {
 			a.draw(g);
 		}
-		for(Class c : modelo.classes()) {
+		for(Class c : classes) {
 			c.draw(g);
+		}
+		// Traemos al frente la clase semioculta sobre la que está el ratón
+		if(lastHover != null) {
+			lastHover.draw(g);
 		}
 	}
 	
@@ -135,6 +147,11 @@ public class Diagram
 	public void mouseMoved(MouseEvent e) {
 		lastX = e.getX();
 		lastY = e.getY();
+		Class c = punteroEnClase(lastX, lastY);
+		if(c != lastHover){
+			lastHover = c;
+			repaint();
+		}
 	}
     
 	@Override
@@ -147,6 +164,9 @@ public class Diagram
 		} else if(associating) {
 			Class c = punteroEnClase(e.getX(), e.getY());
 			if(c != null) {
+				if(lastHover != null) {
+					modelo.hoverClass(lastHover, false);
+				}
 				modelo.hoverClass(c, true);
 				lastHover = c;
 			} else if(lastHover != null) {
@@ -191,7 +211,6 @@ public class Diagram
 	/** Métodos auxiliares                     **/
 	/********************************************/
 	Class punteroEnClase(int px, int py) {
-		ArrayList<Class> classes = modelo.classes();
 		for(int i = classes.size() - 1; i >= 0; --i) {
 			Class c = classes.get(i);
 			if(c.contienePunto(px, py)) {
