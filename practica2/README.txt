@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------------
 // File:   README.txt
-// Author: Jorge Soria Romero (872016) y Jiahao Ye (875490)
+// Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
 // Date:   17 de marzo de 2025
 // Coms:   Fichero que contiene la documentación de la práctica 2 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
