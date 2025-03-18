@@ -7,11 +7,11 @@ import java.rmi.RMISecurityManager;
 public class Cliente {    
     public static void main (String[] args) {
         // TODO : Fijar el directorio donde se encuentra el java.policy
-        String route_policy = "./java.policy";
+        System.setProperty("java.security.policy", "./java.policy");
         
         if (System.getSecurityManager() == null) {
             // TODO : Crear administrador de seguridad
-            System.setSecurityManager(new RMISecurityManager());
+            System.setSecurityManager(new SecurityManager());
         }
         try {
             /** PASO 1 - Obtener una referencia al objeto servidor creado anteriormente

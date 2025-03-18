@@ -27,18 +27,14 @@ public class CollectionImpl extends UnicastRemoteObject implements Collection {
     }
 
     // TODO : Implementar todos los metodos de la interface remota
-
-    @Override
     public int number_of_books () throws RemoteException {
         return m_number_of_books;
     }
 
-    @Override
     public String name_of_collection() throws RemoteException {
         return m_name_of_collection;
     }
 
-    @Override
     public void name_of_collection(String _new_value) throws RemoteException {
         m_name_of_collection = _new_value;
     }
