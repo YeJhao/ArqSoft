@@ -3,7 +3,10 @@
 // Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
 // Date:   18 de marzo de 2025
 // Coms:   Fichero java de la clase Collection, de la práctica 3 de Arquitectura Software.
+//         Sirve como interfaz remota de un objeto
 //-------------------------------------------------------------------------------------------
+
+package practica3;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
