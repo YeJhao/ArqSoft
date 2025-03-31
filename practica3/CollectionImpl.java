@@ -6,17 +6,15 @@
 //         Implementa una o más interfaces remotas para crear objetos remotos.
 //-------------------------------------------------------------------------------------------
 
-package practica3;
-
-import java.rmi.Remote;
-import java.rmi.RemoteException;
+import java.io.Serializable;
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 // TODO : imports necesarios
 
-public class CollectionImpl extends UnicastRemoteObject implements Collection {
+public class CollectionImpl extends UnicastRemoteObject implements Collection, Serializable {
     // Private member variables
-    private int m_number_of_books;
+    private final int m_number_of_books;
     private String m_name_of_collection;
     // Constructor
     public CollectionImpl (String nameCollection, int numberBooks) throws RemoteException {
@@ -27,14 +25,17 @@ public class CollectionImpl extends UnicastRemoteObject implements Collection {
     }
 
     // TODO : Implementar todos los metodos de la interface remota
+    @Override
     public int number_of_books () throws RemoteException {
         return m_number_of_books;
     }
 
+    @Override
     public String name_of_collection() throws RemoteException {
         return m_name_of_collection;
     }
 
+    @Override
     public void name_of_collection(String _new_value) throws RemoteException {
         m_name_of_collection = _new_value;
     }
@@ -46,7 +47,7 @@ public class CollectionImpl extends UnicastRemoteObject implements Collection {
         // Crear administrador de seguridad
         System.setSecurityManager(new SecurityManager());
         // Nombre o IP del host donde reside el objeto servidor
-        String hostName = " IPhostremoto "; // se puede usar "IPhostremoto : puerto "
+        String hostName = "127.0.0.1:32000"; // se puede usar "IPhostremoto : puerto "
         // Por defecto , RMI usa el puerto 1099
         try {
             // Crear objeto remoto

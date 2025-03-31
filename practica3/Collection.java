@@ -6,8 +6,6 @@
 //         Sirve como interfaz remota de un objeto
 //-------------------------------------------------------------------------------------------
 
-package practica3;
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 // TODO : otros imports

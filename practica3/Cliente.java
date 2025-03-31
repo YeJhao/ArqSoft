@@ -1,5 +1,3 @@
-package practica3;
-
 import java.rmi.Naming;
 // TODO : imports necesarios
 import java.rmi.RMISecurityManager;
@@ -17,8 +15,8 @@ public class Cliente {
             /** PASO 1 - Obtener una referencia al objeto servidor creado anteriormente
               * Nombre del host servidor o su IP. Es dónde se buscará al objeto remoto
               */
-            String hostname = " IPremotehost "; // se puede usar "IP: puerto "
-            Collection server = (Collection) Naming.lookup("//"+ hostname + "/MyCollection") ;
+            String hostname = "127.0.0.1:32000"; // se puede usar "IP: puerto "
+            Collection server = (Collection) Naming.lookup("rmi://"+ hostname + "/MyCollection") ;
             
             /** PASO 2 - Invocar remotamente los metodos del objeto servidor : */
             
