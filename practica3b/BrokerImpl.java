@@ -48,6 +48,8 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
     public void baja_servicio(String nombre_servidor, String nom_servicio)
         throws RemoteException {
 
+        if(servicios.containsKey(nom_servicio))
+            servicios.remove(nom_servicio);
     }
 
     /*----------------------------------------------------------------------------------*
