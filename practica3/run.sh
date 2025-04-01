@@ -1,7 +1,5 @@
 #!/bin/bash
 
-pkill -f rmiregistry
-
 #-----------Comprobar-número-parámetros----------
 if [ $# -eq 0 ]; then
     echo "Uso: $0 --server | --client"
@@ -18,6 +16,7 @@ done
 
 #--------------------Ejecutar--------------------
 if [ "$1" == "--server" ]; then
+    pkill -f rmiregistry
     rmiregistry 32000 &
     while ! nc -z 127.0.0.1 32000; do
         sleep 1
