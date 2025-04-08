@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.rmi.Naming;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,12 +21,12 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     
     // Se suponen los nombres de servidores únicos
     // No puede haber dos servicios iguales en dos servidores distintos
-    public Map<String, Set<Servicio>> servicios;
+    public Map<Servidor, Set<Servicio>> servicios;
     public Map<String, String> servidores;
 
     public BrokerImpl() throws RemoteException {
         super();
-        servicios = new HashMap<>();
+        servicios = new HashMap<Servidor, Set<Servicio>>();
         servidores = new HashMap<>();
     }
     
@@ -37,8 +38,12 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     @Override
     public void registrar_servidor(String nombre_servidor, String host_remoto_IP_puerto)
         throws RemoteException {
-        servicios.computeIfAbsent(nombre_servidor, k -> new HashSet<>());
-        servidores.put(nombre_servidor, host_remoto_IP_puerto);
+        
+        // Intentamos insertar nuevo servidor
+        if (servidores.computeIfAbsent(nombre_servidor, k -> host_remoto_IP_puerto).equals(host_remoto_IP_puerto)) {
+            // Si no existía tal servidor
+            servicios.put(new Servidor(nombre_servidor, host_remoto_IP_puerto), new HashSet<>());
+        }
     }
 
     /** Registrar un nuevo servicio */
@@ -53,19 +58,8 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     @Override
     public void baja_servicio(String nombre_servidor, String nom_servicio)
         throws RemoteException {
-        Set<Servicio> serv = servicios.get(nombre_servidor);
-        if (serv != null) {
-            Iterator<Servicio> it = serv.iterator();
-            boolean encontrado = false;
-            while (it.hasNext() && !encontrado) {
-                Servicio s = it.next();
-                if (s.nom_servicio.equals(nom_servicio)) {
-                    encontrado = true;
-                    it.remove();
-                }
-            }
-        }
-        if(servicios.containsKey(nom_servicio))
+
+        if(servicios.containsKey(nombre_servidor))
             servicios.remove(nom_servicio);
     }
 
@@ -80,7 +74,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
 
 
         // Con ArrayList
-        /* 
+        
         ArrayList<Servicio> todosLosServicios = new ArrayList<>();
 
         // Iteramos sobre el map y vamos agregando todos los servicios de cada Set
@@ -100,26 +94,6 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         }
 
         return todosLosServicios; */
-        
-        ArrayList<Servicio> lista = new ArrayList<>();
-
-        // Obtener el Set<Servicio> asociado a la clave 'server'
-        Set<Servicio> serviciosSet = servicios.get(server);
-
-        // Convertir el Set<Servicio> a un arreglo de Servicio[]
-        Servicio[] serviciosArray = serviciosSet.toArray(new Servicio[0]);
-
-                // Recorrer todas las claves del mapa
-        for (String server : servicios.keySet()) {
-            // Obtener el Set<Servicio> para cada servidor
-            Set<Servicio> servicioSet = servicios.get(server);
-            
-            // Recorrer cada servicio en el Set<Servicio> y añadirlo a la lista
-            for (Servicio servicio : servicioSet) {
-                lista.append(servicio).append("\n"); // Asumiendo que el método toString() de Servicio está bien implementado
-            }
-        }
-        return null;
     }
 
     /** Ejecutar un servicio de forma síncrona */
@@ -127,7 +101,19 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     public Serializable ejecutar_servicio(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
 
-        
+        for (Map.Entry<String, Set<Servicio>> entry : servicios.entrySet()) {
+            for (Servicio servicio : entry.getValue()) {
+                
+                    if (servicio.nom_servicio.equals(nom_servicio)) {
+                        String server = entry.getKey();
+                        server.execute(nom_servicio, parametros_servicio);
+                    }
+                
+            }
+        }
+
+        // Recorrer el hashmap servicios, encontrar el primer servidor con servicio
+        // Llamar al servidor.eex
 
         return null;
     }
@@ -150,5 +136,29 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         throws RemoteException {
 
         return null;
+    }
+
+    /*----------------------------------------------------------------------------------*
+     * Main                                                                             *
+     *----------------------------------------------------------------------------------*/
+    private static final String ip = "32000";
+    private static final String hostname = "l";
+
+    public static void main(String args[]) {
+        System.setProperty("java.security.policy", "./java.policy");
+        String hostName = hostname + ip;        
+        try {
+            
+            // Crear objeto remoto
+            BrokerImpl broker = new BrokerImpl();
+            System.out.println("¡Creado!");
+            
+            // Registrar el objeto remoto
+            Naming.rebind("//" + hostName + "/MyBroker", broker);
+            System.out.println("¡Estoy registrado!");
+        }
+        catch(Exception ex) {
+            System.out.println(ex);
+        }
     }
 }

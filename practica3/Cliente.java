@@ -1,14 +1,14 @@
 import java.rmi.Naming;
-// TODO : imports necesarios
+// imports necesarios
 import java.rmi.RMISecurityManager;
 
 public class Cliente {    
     public static void main (String[] args) {
-        // TODO : Fijar el directorio donde se encuentra el java.policy
+        // Fijar el directorio donde se encuentra el java.policy
         System.setProperty("java.security.policy", "./java.policy");
         
         if (System.getSecurityManager() == null) {
-            // TODO : Crear administrador de seguridad
+            // Crear administrador de seguridad
             System.setSecurityManager(new SecurityManager());
         }
         try {
