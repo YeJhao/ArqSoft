@@ -65,6 +65,8 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
                 }
             }
         }
+        if(servicios.containsKey(nom_servicio))
+            servicios.remove(nom_servicio);
     }
 
     /*----------------------------------------------------------------------------------*
