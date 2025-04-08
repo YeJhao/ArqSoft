@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Servicio {
     public String nom_servicio;
@@ -20,5 +21,21 @@ public class Servicio {
         String info = nom_servicio +
             "\n└─" + tipo_retorno;
         return info;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(this == obj) return true;
+        if(obj == null || getClass() != obj.getClass()) return false;
+        Servicio otro = (Servicio) obj;
+        return Objects.equals(nom_servicio, otro.nom_servicio) &&
+            Objects.equals(nombre_servidor, otro.nombre_servidor) &&
+            Objects.equals(lista_param, otro.lista_param) &&
+            Objects.equals(tipo_retorno, otro.tipo_retorno);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(nom_servicio, nombre_servidor, lista_param, tipo_retorno);
     }
 }
