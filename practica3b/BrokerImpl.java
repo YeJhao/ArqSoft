@@ -1,32 +1,30 @@
 //-------------------------------------------------------------------------------------------
 // File:   Broker.java
-// Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
-// Date:   01 de abril de 2025
+// Author: Jorge Soria Romero (872016) y Jiahao Ye (875490)
+// Date:   11 de abril de 2025
 // Coms:   Fichero implementación de la clase Broker, de la práctica 3 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RemoteException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.rmi.Naming;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class BrokerImpl extends UnicastRemoteObject implements Broker {
     
     // Se suponen los nombres de servidores únicos
     // No puede haber dos servicios iguales en dos servidores distintos
-    public Map<Servidor, Set<Servicio>> servicios;
+
+    // A cada nombre del servidor, se le asigna una serie de servicios que tiene
+    public Map<String, Set<Servicio>> servicios;
+
+    // Nombre del servidor, con su IP y puerto
     public Map<String, String> servidores;
 
     public BrokerImpl() throws RemoteException {
         super();
-        servicios = new HashMap<Servidor, Set<Servicio>>();
+        servicios = new HashMap<>();
         servidores = new HashMap<>();
     }
     
@@ -34,7 +32,12 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
      * API para los servidores                                                          *
      *----------------------------------------------------------------------------------*/
 
-    /** Registar servidor */
+    /*
+     * Pre:  Dado dos cadenas de carácteres "nombre_servidor" y "host_remoto_IP_puerto".
+     * Post: Procedimiento que registra la existencia de un servidor con los parámetros
+     *       incluidos. Si ya existía el servidor con "nombre_servidor", se deja el estado
+     *       del Broker igual.
+     */
     @Override
     public void registrar_servidor(String nombre_servidor, String host_remoto_IP_puerto)
         throws RemoteException {
@@ -42,11 +45,17 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         // Intentamos insertar nuevo servidor
         if (servidores.computeIfAbsent(nombre_servidor, k -> host_remoto_IP_puerto).equals(host_remoto_IP_puerto)) {
             // Si no existía tal servidor
-            servicios.put(new Servidor(nombre_servidor, host_remoto_IP_puerto), new HashSet<>());
+            servicios.put(nombre_servidor, new HashSet<>());
         }
     }
 
-    /** Registrar un nuevo servicio */
+    /*
+     * Pre:  Dado "nombre_servidor", que indica el nombre de un servidor registrado y la
+     *       información correspondiente a un servicio (del servidor que se adjunta): nombre,
+     *       parámetros y tipo de retorno. El servicio pasado es único dentro del servidor.
+     * Post: El siguiente procedimiento almacena la relación de correspondencia del servicio
+     *       al servidor "nombre_servidor".
+     */
     @Override
     public void alta_servicio(String nombre_servidor, String nom_servicio,
         ArrayList<String> lista_param, String tipo_retorno) throws RemoteException {
@@ -54,7 +63,11 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         servicios.get(nombre_servidor).add(servicio);
     }
 
-    /** Dar de baja un servicio */
+    /*
+     * Pre:  Dado "nombre_servidor", que indica el nombre de un servidor registrado y el
+     *       nombre de un servicio, asignada al servidor.
+     * Post: Este procedimiento da de baja el servicio del servidor, en el Broker.
+     */
     @Override
     public void baja_servicio(String nombre_servidor, String nom_servicio)
         throws RemoteException {
@@ -67,7 +80,10 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
      * API para los clientes                                                            *
      *----------------------------------------------------------------------------------*/
 
-    /** Listar servicios actualmente registrados */
+    /*
+     * Pre:
+     * Post: Función que devuelve todos los servicios registrados actualmente.
+     */
     @Override
     public ArrayList<Servicio> lista_servicios()
         throws RemoteException {
@@ -96,7 +112,10 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         return todosLosServicios; */
     }
 
-    /** Ejecutar un servicio de forma síncrona */
+    /*
+     * Pre:  Dado un nombre de un servicio y los parámetros requeridos para ejecutarlo.
+     * Post: La siguiente función ejecuta el servicio de forma síncrona.
+     */
     @Override
     public Serializable ejecutar_servicio(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
@@ -122,15 +141,20 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
      * API para los clientes: versión asíncrona                                         *
      *----------------------------------------------------------------------------------*/
 
-
-    /** Ejecutar un servicio de manera asíncrona */
+    /*
+     * Pre:  Dado un nombre de un servicio y los parámetros requeridos para ejecutarlo.
+     * Post: El siguiente procedimiento ejecuta el servicio de forma asíncrona.
+     */
     @Override
     public void ejecutar_servicio_asinc(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
 
     }
 
-    /** Obtener respuesta de una ejecución asíncrona */
+    /*
+     * Pre:  Dado una cadena de carácteres "nom_servicio".
+     * Post: La siguiente función obtiene el resultado de la llamada asíncrona de "nom_servicio".
+     */
     @Override
     public Serializable obtener_respuesta_asinc(String nom_servicio)
         throws RemoteException {
