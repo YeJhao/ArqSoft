@@ -1,14 +1,15 @@
 //-------------------------------------------------------------------------------------------
 // File:   Broker.java
-// Author: Jorge Soria Romero (872016) y Jiahao Ye (875490)
+// Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
 // Date:   11 de abril de 2025
 // Coms:   Fichero interfaz de la clase Broker, de la práctica 3 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
-import java.rmi.RemoteException;
-import java.io.Serializable;
-import java.util.ArrayList;
+package broker;
+
 import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
 
 public interface Broker extends Remote {
 
@@ -33,7 +34,7 @@ public interface Broker extends Remote {
      *       al servidor "nombre_servidor".
      */
     public void alta_servicio(String nombre_servidor, String nom_servicio,
-                              ArrayList<String> lista_param, String tipo_retorno) throws RemoteException;
+        ArrayList<String> lista_param, String tipo_retorno) throws RemoteException;
 
     /*
      * Pre:  Dado "nombre_servidor", que indica el nombre de un servidor registrado y el
@@ -49,15 +50,16 @@ public interface Broker extends Remote {
 
     /*
      * Pre:
-     * Post: Función que devuelve todos los servicios registrados actualmente.
+     * Post: Función que devuelve el nombre de todos los servicios registrados.
      */
-    public ArrayList<Servicio> lista_servicios() throws RemoteException;
+    public Servicios lista_servicios()
+        throws RemoteException;
 
     /*
      * Pre:  Dado un nombre de un servicio y los parámetros requeridos para ejecutarlo.
      * Post: La siguiente función ejecuta el servicio de forma síncrona.
      */
-    public Serializable ejecutar_servicio(String nom_servicio, ArrayList<Object> parametros_servicio)
+    public Respuesta<Object> ejecutar_servicio(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException;
 
     /*
@@ -71,5 +73,6 @@ public interface Broker extends Remote {
      * Pre:  Dado una cadena de carácteres "nom_servicio".
      * Post: La siguiente función obtiene el resultado de la llamada asíncrona de "nom_servicio".
      */
-    public Serializable obtener_respuesta_asinc(String nom_servicio) throws RemoteException;    
+    public Respuesta<Object> obtener_respuesta_asinc(String nom_servicio)
+        throws RemoteException;    
 }
