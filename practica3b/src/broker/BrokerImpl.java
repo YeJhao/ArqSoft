@@ -65,7 +65,6 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
             servidores.put(nombre_servidor, host_remoto_IP_puerto);
             System.out.println("Servidor registrado: " + nombre_servidor + " -> " + host_remoto_IP_puerto);
         }
-
     }
 
     /*
