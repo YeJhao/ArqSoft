@@ -34,12 +34,19 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     /** Resultado correspondiente a la ejecución asíncrona del servicio */
     private final ConcurrentMap<String, Future<Object>> resultadosAsinc;
 
+    /* 
+     * Mapa que devuelve <<true>> si el resultado de una ejecución asíncrona
+     * de un servicio ya ha sido devuelta al cliente. Devuelve <<false>> en caso contrario
+     */
+    private final ConcurrentMap<String, Boolean> respuestaEntregada;
+
     /** Constructor */
     public BrokerImpl() throws RemoteException {
         super();
         servidores = new ConcurrentHashMap<>();
         servicios = new ConcurrentHashMap<>();
         resultadosAsinc = new ConcurrentHashMap<>();
+        respuestaEntregada = new ConcurrentHashMap<>();
     }
     
     /*
@@ -185,14 +192,21 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         // Obtenemos el cliente que ha llamado
         try {
             String client = getClientHost();
+            String key = nom_servicio + ":" + client;
+            
+            if (respuestaEntregada.get(key)) {
+                Future<Object> future = executor.submit(() -> {
+                    Respuesta<Object> resp = ejecutar_servicio(nom_servicio, parametros_servicio);
+        
+                    return resp.getResultado();
+                });
 
-            Future<Object> future = executor.submit(() -> {
-                Respuesta<Object> resp = ejecutar_servicio(nom_servicio, parametros_servicio);
-    
-                return resp.getResultado();
-            });
-    
-            resultadosAsinc.put(nom_servicio + ":" + client, future);
+                resultadosAsinc.put(key, future);
+                respuestaEntregada.put(key, false);
+            }
+            else {
+                System.err.println("Recoja el resultado de la ejecución anterior, antes de proseguir con otra ejecución");
+            }
         }
         catch (Exception e) {
             System.err.println(e);
@@ -210,15 +224,24 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         // Obtenemos el cliente que ha llamado
         try {
             String client = getClientHost();
+            String key = nom_servicio + ":" + client;
 
-            Future<Object> future = resultadosAsinc.get(nom_servicio + ":" + client);
+            Future<Object> future = resultadosAsinc.get(key);
 
             if (future == null) {
                 return new Respuesta<>("Error: No hay ejecución asíncrona para " + nom_servicio);
             }
 
+            if (respuestaEntregada.getOrDefault(key, false)) {
+                return new Respuesta<>("Error: La respuesta ya fue entregada previamente para " +
+                                       client + " ,con: " + nom_servicio);
+            }
+
             try {
-                return new Respuesta<>(future.get());
+                Object resultado = future.get();
+                respuestaEntregada.put(key, true); // Marcar como entregada
+                
+                return new Respuesta<>(resultado);
             }
             catch (Exception e) {
                 return new Respuesta<>("Error: " + e.getMessage());
