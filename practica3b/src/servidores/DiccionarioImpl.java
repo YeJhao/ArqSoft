@@ -1,3 +1,11 @@
+//-------------------------------------------------------------------------------------------
+// File:   DiccionarioImpl.java
+// Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
+// Date:   18 de abril de 2025
+// Coms:   Fichero implementación de la clase Diccionario, de la práctica 3 de Arquitectura
+//         Software. Servidor que proporciona funciones de un diccionario.
+//-------------------------------------------------------------------------------------------
+
 package servidores;
 
 import broker.Broker;
@@ -17,19 +25,32 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
         diccionario = new HashMap<>();
     }
 
-    /** Guarda una palabra y su traducción en el diccionario */
+    /*
+     * Pre : Dado dos cadenas de caracteres "palabra" y "traduccion".
+     * Post: El siguiente procedimiento guarda la "palabra" con su respectiva "traduccion" en
+     *       el diccionario.
+     */
     @Override
     public void agnadirPalabra(String palabra, String traduccion) throws RemoteException {
         diccionario.put(palabra, traduccion);
     }
 
-    /** Devuelve la traducción de 'palabra' si está registrada en el diccionario */
+    /*
+     * Pre : Dado una palabra que se desea conseguir su correspondiente traducción por el
+     *       diccionario.
+     * Post: Esta función devuelve la traducción de "palabra" registrada en el diccionario.
+     *       En caso de que no esté registrado, devuelve '(Desconocido)'.
+     */
     @Override
     public String traducir(String palabra) throws RemoteException {
         return diccionario.getOrDefault(palabra, "(Desconocido)");
     }
 
-    /** Devuelve el número de palabras en el diccionario que empiezan por 'pref' */
+    /*
+     * Pre : Dado el <<String>> "pref".
+     * Post: Función que devuelve el número de palabras en el diccionario que empiezan por la
+     *       cadena "pref".
+     */
     @Override
     public int numPalabrasConPrefijo(String pref) throws RemoteException {
         int count = 0;
@@ -71,11 +92,15 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
             ArrayList<String> p1 = new ArrayList<>(); p1.add("String"); p1.add("String");
             ArrayList<String> p2 = new ArrayList<>(); p2.add("String");
 
-            broker.alta_servicio("DiccionarioServer", "agnadirPalabra", p1, "void");
-            broker.alta_servicio("DiccionarioServer", "traducir", p2, "String");
-            broker.alta_servicio("DiccionarioServer", "numPalabrasConPrefijo", p2, "int");
+            broker.alta_servicio("DiccionarioServer", "agnadirPalabra", p1, "void",
+                                 "El siguiente procedimiento guarda la \"palabra\" con su respectiva \"traduccion\" en el diccionario");
+            broker.alta_servicio("DiccionarioServer", "traducir", p2, "String",
+                                 "Función que devuelve la traducción del parámetro pasado");
+            broker.alta_servicio("DiccionarioServer", "numPalabrasConPrefijo", p2, "int",
+                                 "Función que devuelve el número de palabras que comienzan por \"pref\"");
         
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("Error en Broker: " + e.getMessage());
         }
     }

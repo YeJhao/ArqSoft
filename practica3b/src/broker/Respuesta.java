@@ -1,10 +1,15 @@
+//-------------------------------------------------------------------------------------------
+// File:   Respuesta.java
+// Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
+// Date:   18 de abril de 2025
+// Coms:   Fichero java de la clase Respuesta, de la práctica 3 de Arquitectura Software, que
+//         representa el resultado de un servicio.
+//-------------------------------------------------------------------------------------------
+
 package broker;
 
 import java.io.Serializable;
 
-/**
- * Clase que representa la respuesta de un servicio
- */
 public class Respuesta<T> implements Serializable {
     
     /** Resultado del servicio */

@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 import java.rmi.Naming;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +31,6 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     /** Pares { nom_servicio, ServicioInfo } */
     private final ConcurrentMap<String, ServicioInfo> servicios;
 
-    // TODO: Sería necesario conocer el cliente, para devolver el resultado correspondiente
     /** Resultado correspondiente a la ejecución asíncrona del servicio */
     private final ConcurrentMap<String, Future<Object>> resultadosAsinc;
 
@@ -179,14 +179,24 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     @Override
     public void ejecutar_servicio_asinc(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
-        //TODO
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        Future<Object> future = executor.submit(() -> {
-            Respuesta<Object> resp = ejecutar_servicio(nom_servicio, parametros_servicio);
-            return resp.getResultado();
-        });
-        resultadosAsinc.put(nom_servicio, future);
+        // Obtenemos el cliente que ha llamado
+        try {
+            String client = getClientHost();
+
+            Future<Object> future = executor.submit(() -> {
+                Respuesta<Object> resp = ejecutar_servicio(nom_servicio, parametros_servicio);
+    
+                return resp.getResultado();
+            });
+    
+            resultadosAsinc.put(nom_servicio + ":" + client, future);
+        }
+        catch (Exception e) {
+            System.err.println(e);
+        }
     }
 
     /*
@@ -196,14 +206,25 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     @Override
     public Respuesta<Object> obtener_respuesta_asinc(String nom_servicio)
         throws RemoteException {
-        //TODO
-        Future<Object> future = resultadosAsinc.get(nom_servicio);
-        if (future == null) {
-            return new Respuesta<>("Error: No hay ejecución asíncrona para " + nom_servicio);
-        }
+
+        // Obtenemos el cliente que ha llamado
         try {
-            return new Respuesta<>(future.get());
-        } catch (Exception e) {
+            String client = getClientHost();
+
+            Future<Object> future = resultadosAsinc.get(nom_servicio + ":" + client);
+
+            if (future == null) {
+                return new Respuesta<>("Error: No hay ejecución asíncrona para " + nom_servicio);
+            }
+
+            try {
+                return new Respuesta<>(future.get());
+            }
+            catch (Exception e) {
+                return new Respuesta<>("Error: " + e.getMessage());
+            }
+        }
+        catch (Exception e) {
             return new Respuesta<>("Error: " + e.getMessage());
         }
     }
@@ -219,7 +240,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
             System.exit(-1);
         }
 
-        // Obtengo parámetros (ip y puerto donde correrá el broker central)
+        // Obtengo parámetros (ip y puerto donde correrá el broker)
         String ip = args[0], puerto = args[1];
         String url = "//" + ip + ":" + puerto + "/Broker";
 
@@ -234,7 +255,8 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
             BrokerImpl broker = new BrokerImpl();
             Naming.rebind(url, broker);
             System.out.println("¡Estoy regitrado! Broker disponible en " + url);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("Error en Broker: " + e.getMessage());
         }
     }

@@ -1,3 +1,11 @@
+//-------------------------------------------------------------------------------------------
+// File:   Inventario.java
+// Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
+// Date:   18 de abril de 2025
+// Coms:   Fichero interfaz de la clase Inventario, de la práctica 3 de Arquitectura
+//         Software. Servidor que proporciona funciones de un inventario.
+//-------------------------------------------------------------------------------------------
+
 package servidores;
 
 import java.rmi.Remote;
@@ -6,16 +14,25 @@ import java.util.ArrayList;
 
 public interface Inventario extends Remote {
     
-    /**
-     * Registra 'uds' unidades del producto identificado por 'nombre'  
-     * Si el producto ya estaba, se suman las unidades.
+    /*
+     * Pre : Dado una cadena de caracteres "nombre", identificando un producto y un entero
+     *       "uds", indicando la cantidad del producto.
+     * Post: El siguiente procedimiento añade en el inventario al producto, las unidades que
+     *       se pasan como parámetro.
      */
     void agnadirProducto(String nombre, int uds) throws RemoteException;
 
-    /** Obtiene el número de unidades que hay del producto 'name' */
-    int obtenerUnidades(String name) throws RemoteException;
+    /*
+     * Pre : Dado el nombre de un producto, el cual se desea buscar.
+     * Post: Esta función devuelve un entero muestra la cantidad del producto presente en
+     *       el inventario.
+     */
+    int obtenerUnidades(String nombre) throws RemoteException;
 
-    /** Devuelve el nombre de todos los productos en el inventario */
+    /*
+     * Pre : --
+     * Post: Función que devuelve la lista de los productos existentes en el inventario.
+     */
     ArrayList<String> listarProductos() throws RemoteException;
 
 }

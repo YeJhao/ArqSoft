@@ -110,7 +110,7 @@ public class Cliente {
             }
         }
         catch (Exception ex) {
-            System.out.println(ex);
+            System.err.println(ex);
         }
     }
 }

@@ -1,3 +1,11 @@
+//-------------------------------------------------------------------------------------------
+// File:   InventarioImpl.java
+// Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
+// Date:   18 de abril de 2025
+// Coms:   Fichero implementación de la clase Inventario, de la práctica 3 de Arquitectura
+//         Software. Servidor que proporciona funciones de un inventario.
+//-------------------------------------------------------------------------------------------
+
 package servidores;
 
 import broker.Broker;
@@ -18,9 +26,11 @@ public class InventarioImpl extends UnicastRemoteObject implements Inventario {
         inventario = new HashMap<>();
     }
 
-    /**
-     * Registra 'uds' unidades del producto identificado por 'nombre'  
-     * Si el producto ya estaba, se suman las unidades.
+    /*
+     * Pre : Dado una cadena de caracteres "nombre", identificando un producto y un entero
+     *       "uds", indicando la cantidad del producto.
+     * Post: El siguiente procedimiento añade en el inventario al producto, las unidades que
+     *       se pasan como parámetro.
      */
     @Override
     public void agnadirProducto(String nombre, int uds) throws RemoteException {
@@ -30,13 +40,20 @@ public class InventarioImpl extends UnicastRemoteObject implements Inventario {
             inventario.put(nombre, uds);
     }
 
-    /** Obtiene el número de unidades que hay del producto 'name' */
+    /*
+     * Pre : Dado el nombre de un producto, el cual se desea buscar.
+     * Post: Esta función devuelve un entero muestra la cantidad del producto presente en
+     *       el inventario.
+     */
     @Override
     public int obtenerUnidades(String nombre) throws RemoteException {
         return inventario.getOrDefault(nombre, 0);
     }
 
-    /** Devuelve el nombre de todos los productos en el inventario */
+    /*
+     * Pre : --
+     * Post: Función que devuelve la lista de los productos existentes en el inventario.
+     */
     @Override
     public ArrayList<String> listarProductos() throws RemoteException {
         return new ArrayList<>(inventario.keySet());
@@ -75,11 +92,15 @@ public class InventarioImpl extends UnicastRemoteObject implements Inventario {
             ArrayList<String> p2 = new ArrayList<>(); p2.add("String");
             ArrayList<String> p3 = new ArrayList<>();
 
-            broker.alta_servicio("InventarioServer", "agnadirProducto", p1, "void");
-            broker.alta_servicio("InventarioServer", "obtenerUnidades", p2, "int");
-            broker.alta_servicio("InventarioServer", "listarProductos", p3, "Vector<String>");
+            broker.alta_servicio("InventarioServer", "agnadirProducto", p1, "void",
+                                 "Procedimiento que suma la cantidad pasada al producto respectivo");
+            broker.alta_servicio("InventarioServer", "obtenerUnidades", p2, "int",
+                                 "Función que devuelve la cantidad del producto que se busca");
+            broker.alta_servicio("InventarioServer", "listarProductos", p3, "Vector<String>",
+                                 "Función que devuelve la lista de productos existente en el inventario");
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("Error en Broker: " + e.getMessage());
         }
     }
