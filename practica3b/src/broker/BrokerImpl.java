@@ -13,26 +13,41 @@ import java.rmi.Naming;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class BrokerImpl extends UnicastRemoteObject implements Broker {
 
-    // Los nombres de servidores son únicos
-    // No puede haber dos servicios iguales en dos servidores distintos
+    // Los nombres de servidores y servicios son únicos
 
     /** Pares { nom_servidor, host_remoto_IP_puerto } */
-    private final Map<String, String> servidores;
+    private final ConcurrentMap<String, String> servidores;
 
     /** Pares { nom_servicio, ServicioInfo } */
-    private final Map<String, ServicioInfo> servicios;
+    private final ConcurrentMap<String, ServicioInfo> servicios;
+
+    // TODO: Sería necesario conocer el cliente, para devolver el resultado correspondiente
+    /** Resultado correspondiente a la ejecución asíncrona del servicio */
+    private final ConcurrentMap<String, Future<Object>> resultadosAsinc;
 
     /** Constructor */
     public BrokerImpl() throws RemoteException {
         super();
-        servidores = new HashMap<>();
-        servicios = new HashMap<>();
+        servidores = new ConcurrentHashMap<>();
+        servicios = new ConcurrentHashMap<>();
+        resultadosAsinc = new ConcurrentHashMap<>();
+    }
+    
+    /*
+     * Pre:  Dado un nombre de servicio, que está registrado en el broker.
+     * Post: Función "getter" que devuelve la información del servicio correspondiente.
+     */
+    public ServicioInfo getServicioInfo(String nom_servicio) {
+        return servicios.get(nom_servicio);
     }
 
     public static class ServicioInfo implements Serializable {
@@ -41,13 +56,21 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         public final ArrayList<String> lista_param;
         public final String tipo_retorno;
         public final String url;
+        public final String description;
 
-        public ServicioInfo(String nom_servidor, String nom_servicio, ArrayList<String> lista_param, String tipo_retorno, String url) {
+        public ServicioInfo(String nom_servidor, String nom_servicio,
+                            ArrayList<String> lista_param, String tipo_retorno, String url,
+                            String description) {
             this.nom_servidor = nom_servidor;
             this.nom_servicio = nom_servicio;
             this.lista_param = lista_param;
             this.tipo_retorno = tipo_retorno;
             this.url = url;
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
         }
     }
 
@@ -70,13 +93,14 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     /*
      * Pre:  Dado "nombre_servidor", que indica el nombre de un servidor registrado y la
      *       información correspondiente a un servicio (del servidor que se adjunta): nombre,
-     *       parámetros y tipo de retorno. El servicio pasado es único dentro del servidor.
+     *       parámetros, tipo de retorno y una descripción. El servicio pasado es único
+     *       dentro del servidor.
      * Post: El siguiente procedimiento almacena la relación de correspondencia del servicio
      *       al servidor "nombre_servidor".
      */
     @Override
     public void alta_servicio(String nombre_servidor, String nom_servicio,
-        ArrayList<String> lista_param, String tipo_retorno) throws RemoteException {
+        ArrayList<String> lista_param, String tipo_retorno, String description) throws RemoteException {
 
         String url = servidores.get(nombre_servidor);
         if(url == null) {
@@ -84,7 +108,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
             return;
         }
         ServicioInfo sinfo = new ServicioInfo(
-            nombre_servidor, nom_servicio, lista_param, tipo_retorno, url);
+            nombre_servidor, nom_servicio, lista_param, tipo_retorno, url, description);
         servicios.put(nom_servicio, sinfo);
         System.out.println("Alta de servicio \"" + nom_servicio + "\" del servidor \"" + nombre_servidor + "\".");
     }
@@ -156,6 +180,13 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     public void ejecutar_servicio_asinc(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
         //TODO
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        Future<Object> future = executor.submit(() -> {
+            Respuesta<Object> resp = ejecutar_servicio(nom_servicio, parametros_servicio);
+            return resp.getResultado();
+        });
+        resultadosAsinc.put(nom_servicio, future);
     }
 
     /*
@@ -166,7 +197,15 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     public Respuesta<Object> obtener_respuesta_asinc(String nom_servicio)
         throws RemoteException {
         //TODO
-        return null;
+        Future<Object> future = resultadosAsinc.get(nom_servicio);
+        if (future == null) {
+            return new Respuesta<>("Error: No hay ejecución asíncrona para " + nom_servicio);
+        }
+        try {
+            return new Respuesta<>(future.get());
+        } catch (Exception e) {
+            return new Respuesta<>("Error: " + e.getMessage());
+        }
     }
 
     /*----------------------------------------------------------------------------------*

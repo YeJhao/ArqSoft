@@ -29,12 +29,13 @@ public interface Broker extends Remote {
     /*
      * Pre:  Dado "nombre_servidor", que indica el nombre de un servidor registrado y la
      *       información correspondiente a un servicio (del servidor que se adjunta): nombre,
-     *       parámetros y tipo de retorno. El servicio pasado es único dentro del servidor.
+     *       parámetros, tipo de retorno y una descripción. El servicio pasado es único
+     *       dentro del servidor.
      * Post: El siguiente procedimiento almacena la relación de correspondencia del servicio
      *       al servidor "nombre_servidor".
      */
     public void alta_servicio(String nombre_servidor, String nom_servicio,
-        ArrayList<String> lista_param, String tipo_retorno) throws RemoteException;
+        ArrayList<String> lista_param, String tipo_retorno, String description) throws RemoteException;
 
     /*
      * Pre:  Dado "nombre_servidor", que indica el nombre de un servidor registrado y el
