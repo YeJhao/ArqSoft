@@ -1,7 +1,7 @@
 //-------------------------------------------------------------------------------------------
-// File:   Broker.java
+// File:   BrokerImpl.java
 // Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
-// Date:   11 de abril de 2025
+// Date:   20 de abril de 2025
 // Coms:   Fichero implementación de la clase Broker, de la práctica 3 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
@@ -49,14 +49,6 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         respuestaEntregada = new ConcurrentHashMap<>();
     }
     
-    /*
-     * Pre:  Dado un nombre de servicio, que está registrado en el broker.
-     * Post: Función "getter" que devuelve la información del servicio correspondiente.
-     */
-    public ServicioInfo getServicioInfo(String nom_servicio) {
-        return servicios.get(nom_servicio);
-    }
-
     public static class ServicioInfo implements Serializable {
         public final String nom_servidor;
         public final String nom_servicio;
@@ -133,7 +125,8 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         if(sinfo != null && sinfo.nom_servidor.equals(nombre_servidor)) {
             servicios.remove(nom_servicio);
             System.out.println("Baja del servicio \"" + nom_servicio + "\" del servidor \"" + nombre_servidor + "\".");
-        } else {
+        }
+        else {
             System.out.println("Servicio no encontrado o no pertenece al servidor \"" +  nombre_servidor + "\".");
         }
     }
@@ -160,21 +153,37 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     public Respuesta<Object> ejecutar_servicio(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
 
+            if (nom_servicio.equals("descripcion_servicio") && parametros_servicio.size() == 1) {
+                String objetivo = (String) parametros_servicio.get(0);
+                ServicioInfo sinf = servicios.get(objetivo);
+
+                if (sinf != null) return new Respuesta<>(sinf.getDescription());
+                return new Respuesta<>("No se encontró el servicio.");
+            }
+
+
         ServicioInfo sinf = servicios.get(nom_servicio);
+
         if(sinf == null) {
             return new Respuesta<>("Error: Servicio \"" + nom_servicio + "\" no registrado.");
         }
+        
         try {
             Remote remote = Naming.lookup("rmi://" + sinf.url);
             Method[] methods = remote.getClass().getMethods();
+            
             for(Method method : methods) {
-                if(method.getName().equals(nom_servicio) && method.getParameterCount() == parametros_servicio.size()) {
+                if(method.getName().equals(nom_servicio) &&
+                   method.getParameterCount() == parametros_servicio.size()) {
+                    
                     Object resultado = method.invoke(remote, parametros_servicio);
+                    
                     return new Respuesta<>(resultado);
                 }
             }
             return new Respuesta<>("Error: Método no encontrado en objeto remoto para servicio \"" + nom_servicio + "\".");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return new Respuesta<>("Error: " + e.getMessage());
         }
     }

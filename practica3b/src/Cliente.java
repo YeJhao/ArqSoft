@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------------------------------
-// File:   Broker.java
+// File:   Cliente.java
 // Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
 // Date:   17 de abril de 2025
 // Coms:   Fichero java que sirve como cliente para la práctica 3 de Arquitectura Software.
@@ -8,9 +8,7 @@
 // TODO: ¿Se podría mejorar la distribución de las clases?
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
-import broker.BrokerImpl;
-import broker.Respuesta;
-import broker.Servicios;
+import broker.*;
 import broker.BrokerImpl.ServicioInfo;
 import java.util.*;
 
@@ -30,7 +28,7 @@ public class Cliente {
 
             // TODO: Solo se puede hardcorear la dirección?
             String hostname = "127.0.0.1:32000"; // se puede usar "IP: puerto "
-            BrokerImpl broker = (BrokerImpl) Naming.lookup("rmi://"+ hostname + "/BrokerImpl") ;
+            Broker broker = (Broker) Naming.lookup("rmi://"+ hostname + "/Broker") ;
             
             /** PASO 2 - Invocar remotamente los metodos del objeto servidor : */
 
@@ -99,9 +97,12 @@ public class Cliente {
                 }
                 else if (input_partes[1].equals("-h")) {
                     // Obtener la descripción de nom_servicio
-                    ServicioInfo info = broker.getServicioInfo(input_partes[0]);
+                    ArrayList<Object> params = new ArrayList<>();
+                    params.add(input_partes[0]);
 
-                    System.out.println(info.getDescription());
+                    Respuesta<Object> description = broker.ejecutar_servicio("descripcion_servicio", params);
+
+                    System.out.println(description.getResultado());
                 }
                 else {
                     System.out.println("Comando no válido. Formato esperado: <nombre_servicio> [ -s | -a | -h ] <lista_params>");
