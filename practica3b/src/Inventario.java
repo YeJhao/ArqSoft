@@ -6,8 +6,6 @@
 //         Software. Servidor que proporciona funciones de un inventario.
 //-------------------------------------------------------------------------------------------
 
-package servidores;
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;

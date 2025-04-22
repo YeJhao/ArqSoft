@@ -5,16 +5,14 @@
 // Coms:   Fichero implementación de la clase Broker, de la práctica 3 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
-package broker;
-
-import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.rmi.Naming;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -34,6 +32,9 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     /** Resultado correspondiente a la ejecución asíncrona del servicio */
     private final ConcurrentMap<String, Future<Object>> resultadosAsinc;
 
+    /** Executor service compartido para la reutilización de hilos */
+    private final ExecutorService executor;
+
     /* 
      * Mapa que devuelve <<true>> si el resultado de una ejecución asíncrona
      * de un servicio ya ha sido devuelta al cliente. Devuelve <<false>> en caso contrario
@@ -47,30 +48,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         servicios = new ConcurrentHashMap<>();
         resultadosAsinc = new ConcurrentHashMap<>();
         respuestaEntregada = new ConcurrentHashMap<>();
-    }
-    
-    public static class ServicioInfo implements Serializable {
-        public final String nom_servidor;
-        public final String nom_servicio;
-        public final ArrayList<String> lista_param;
-        public final String tipo_retorno;
-        public final String url;
-        public final String description;
-
-        public ServicioInfo(String nom_servidor, String nom_servicio,
-                            ArrayList<String> lista_param, String tipo_retorno, String url,
-                            String description) {
-            this.nom_servidor = nom_servidor;
-            this.nom_servicio = nom_servicio;
-            this.lista_param = lista_param;
-            this.tipo_retorno = tipo_retorno;
-            this.url = url;
-            this.description = description;
-        }
-
-        public String getDescription() {
-            return description;
-        }
+        executor = Executors.newCachedThreadPool();
     }
 
     /*
@@ -140,8 +118,8 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
      * Post: Función que devuelve el nombre de todos los servicios registrados.
      */
     @Override
-    public Servicios lista_servicios() throws RemoteException {
-        return new Servicios(servicios.keySet());
+    public Map<String, ServicioInfo> lista_servicios() throws RemoteException {
+        return new HashMap<>(servicios);
     }
 
     /*
@@ -149,42 +127,48 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
      * Post: La siguiente función ejecuta el servicio de forma síncrona.
      */
     @Override
-    @SuppressWarnings("UseSpecificCatch")
     public Respuesta<Object> ejecutar_servicio(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
 
-            if (nom_servicio.equals("descripcion_servicio") && parametros_servicio.size() == 1) {
-                String objetivo = (String) parametros_servicio.get(0);
-                ServicioInfo sinf = servicios.get(objetivo);
-
-                if (sinf != null) return new Respuesta<>(sinf.getDescription());
-                return new Respuesta<>("No se encontró el servicio.");
-            }
-
-
         ServicioInfo sinf = servicios.get(nom_servicio);
-
-        if(sinf == null) {
-            return new Respuesta<>("Error: Servicio \"" + nom_servicio + "\" no registrado.");
-        }
+        if(sinf == null)
+            throw new RemoteException("Error: Servicio \"" + nom_servicio + "\" no registrado.");
         
         try {
-            Remote remote = Naming.lookup("rmi://" + sinf.url);
+            Remote remote = Naming.lookup("rmi:" + sinf.url);
             Method[] methods = remote.getClass().getMethods();
             
             for(Method method : methods) {
-                if(method.getName().equals(nom_servicio) &&
-                   method.getParameterCount() == parametros_servicio.size()) {
-                    
-                    Object resultado = method.invoke(remote, parametros_servicio);
-                    
+                
+                // No es el servicio que se desea ejecutar
+                if(!method.getName().equals(nom_servicio))
+                    continue;
+                
+                // No se han introducido los parámetros necesarios
+                Class<?>[] paramTypes = method.getParameterTypes();
+                if(paramTypes.length != parametros_servicio.size())
+                    continue;
+
+                boolean coincide = true;
+                for(int i = 0; i < paramTypes.length; ++i) {
+                    // Comprobar que los parámetros son del tipo adecuado
+                    Object param = parametros_servicio.get(i);
+                    String tipoEsperado = sinf.lista_param.get(i);
+                    if(!tipoCoincide(paramTypes[i], tipoEsperado, param)) {
+                        coincide = false;
+                        break;
+                    }
+                }
+
+                if(coincide) {
+                    Object resultado = method.invoke(remote, parametros_servicio.toArray());
                     return new Respuesta<>(resultado);
                 }
             }
-            return new Respuesta<>("Error: Método no encontrado en objeto remoto para servicio \"" + nom_servicio + "\".");
+            throw new RemoteException("Error: Método no encontrado en objeto remoto para servicio \"" + nom_servicio + "\".");
         }
         catch (Exception e) {
-            return new Respuesta<>("Error: " + e.getMessage());
+            throw new RemoteException("Error: " + e.getMessage());
         }
     }
 
@@ -196,29 +180,30 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     public void ejecutar_servicio_asinc(String nom_servicio, ArrayList<Object> parametros_servicio)
         throws RemoteException {
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-
-        // Obtenemos el cliente que ha llamado
         try {
             String client = getClientHost();
             String key = nom_servicio + ":" + client;
             
-            if (respuestaEntregada.get(key)) {
+            if (respuestaEntregada.getOrDefault(key, true)) {
                 Future<Object> future = executor.submit(() -> {
-                    Respuesta<Object> resp = ejecutar_servicio(nom_servicio, parametros_servicio);
-        
-                    return resp.getResultado();
+                    try {
+                        Respuesta<Object> resp = ejecutar_servicio(nom_servicio, parametros_servicio);
+                        return resp.getResultado();
+                    } catch (RemoteException e) {
+                        return "Error en ejecución remota: " + e.getMessage();
+                    } catch (Exception e) {
+                        return "Error inesperado: " + e.getMessage();
+                    }
                 });
 
                 resultadosAsinc.put(key, future);
                 respuestaEntregada.put(key, false);
-            }
-            else {
-                System.err.println("Recoja el resultado de la ejecución anterior, antes de proseguir con otra ejecución");
+            } else {
+                System.err.println("Recoja la respuesta anterior del servicio \"" + nom_servicio + "\" antes de volver a ejecutarlo.");
             }
         }
         catch (Exception e) {
-            System.err.println(e);
+            System.err.println("Error al ejecutar servicio asíncrono: " + e.getMessage());
         }
     }
 
@@ -230,43 +215,70 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
     public Respuesta<Object> obtener_respuesta_asinc(String nom_servicio)
         throws RemoteException {
 
-        // Obtenemos el cliente que ha llamado
         try {
             String client = getClientHost();
             String key = nom_servicio + ":" + client;
 
             Future<Object> future = resultadosAsinc.get(key);
 
-            if (future == null) {
-                return new Respuesta<>("Error: No hay ejecución asíncrona para " + nom_servicio);
-            }
+            if (future == null)
+                throw new RemoteException("Error: No hay ejecución asíncrona para \"" + nom_servicio + "\".");
 
-            if (respuestaEntregada.getOrDefault(key, false)) {
-                return new Respuesta<>("Error: La respuesta ya fue entregada previamente para " +
-                                       client + " ,con: " + nom_servicio);
-            }
+            if (respuestaEntregada.getOrDefault(key, false))
+                throw new RemoteException("Error: La respuesta ya fue entregada previamente para " +
+                    client + " ,con: " + nom_servicio);
 
-            try {
-                Object resultado = future.get();
-                respuestaEntregada.put(key, true); // Marcar como entregada
-                
-                return new Respuesta<>(resultado);
-            }
-            catch (Exception e) {
-                return new Respuesta<>("Error: " + e.getMessage());
-            }
-        }
-        catch (Exception e) {
+            Object resultado = future.get();
+            respuestaEntregada.put(key, true); // Marcar como entregada
+            return new Respuesta<>(resultado);
+
+        } catch (Exception e) {
             return new Respuesta<>("Error: " + e.getMessage());
         }
     }
 
     /*----------------------------------------------------------------------------------*
+     * Funciones auxiliares                                                             *
+     *----------------------------------------------------------------------------------*/
+    private boolean tipoCoincide(Class<?> claseEsperada, String tipoDeclarado, Object parametro) {
+        if (parametro == null) {
+            return !claseEsperada.isPrimitive(); // null solo es válido para tipos no primitivos
+        }
+
+        Class<?> claseParametro = parametro.getClass();
+
+        switch (tipoDeclarado.toLowerCase()) {
+            case "int":
+                return claseEsperada == int.class || claseEsperada == Integer.class || claseParametro == Integer.class;
+            case "double":
+                return claseEsperada == double.class || claseEsperada == Double.class || claseParametro == Double.class;
+            case "boolean":
+                return claseEsperada == boolean.class || claseEsperada == Boolean.class || claseParametro == Boolean.class;
+            case "float":
+                return claseEsperada == float.class || claseEsperada == Float.class || claseParametro == Float.class;
+            case "long":
+                return claseEsperada == long.class || claseEsperada == Long.class || claseParametro == Long.class;
+            case "short":
+                return claseEsperada == short.class || claseEsperada == Short.class || claseParametro == Short.class;
+            case "byte":
+                return claseEsperada == byte.class || claseEsperada == Byte.class || claseParametro == Byte.class;
+            case "char":
+                return claseEsperada == char.class || claseEsperada == Character.class || claseParametro == Character.class;
+            default:
+                return claseEsperada.getSimpleName().equalsIgnoreCase(tipoDeclarado)
+                    || claseEsperada.isAssignableFrom(claseParametro);
+        }
+    }
+
+
+    /*----------------------------------------------------------------------------------*
      * Main                                                                             *
      *----------------------------------------------------------------------------------*/
 
-    @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
+
+        final String sufijo = "506";
+
         if(args.length != 2) {
             System.err.println("Uso: java BrokerImpl <ip> <puerto>");
             System.exit(-1);
@@ -274,7 +286,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
 
         // Obtengo parámetros (ip y puerto donde correrá el broker)
         String ip = args[0], puerto = args[1];
-        String url = "//" + ip + ":" + puerto + "/Broker";
+        String url = "//" + ip + ":" + puerto + "/Broker" + sufijo;
 
         // Establecer permisos y política de seguridad
         System.setProperty("java.security.policy", "./java.policy");
@@ -286,7 +298,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
         try {
             BrokerImpl broker = new BrokerImpl();
             Naming.rebind(url, broker);
-            System.out.println("¡Estoy regitrado! Broker disponible en " + url);
+            System.out.println("¡Estoy registrado! Broker disponible en " + url);
         }
         catch (Exception e) {
             System.err.println("Error en Broker: " + e.getMessage());

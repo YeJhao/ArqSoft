@@ -6,9 +6,6 @@
 //         Software. Servidor que proporciona funciones de un diccionario.
 //-------------------------------------------------------------------------------------------
 
-package servidores;
-
-import broker.Broker;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -32,6 +29,9 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
      */
     @Override
     public void agnadirPalabra(String palabra, String traduccion) throws RemoteException {
+        if(palabra == null || traduccion == null || palabra.isBlank() || traduccion.isBlank())
+            throw new RemoteException("La palabra y su traducción no pueden ser vacías o nulas.");
+        
         diccionario.put(palabra, traduccion);
     }
 
@@ -43,6 +43,9 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
      */
     @Override
     public String traducir(String palabra) throws RemoteException {
+        if(palabra == null || palabra.trim().isEmpty())
+            throw new RemoteException("La palabra a traducir no puede ser vacía o nula.");
+
         return diccionario.getOrDefault(palabra, "(Desconocido)");
     }
 
@@ -53,16 +56,21 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
      */
     @Override
     public int numPalabrasConPrefijo(String pref) throws RemoteException {
+        if(pref == null || pref.trim().isEmpty())
+            throw new RemoteException("El prefijo no puede ser la cadena vacía o nulo.");
+
         int count = 0;
         for(String palabra : diccionario.keySet()) {
-            if(palabra.startsWith(pref)) count++;
+            if(palabra.startsWith(pref)) ++count;
         }
         return count;
     }
 
     /** Programa principal */
-    @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
+        
+        final String sufijo = "506";
+
         if(args.length != 2) {
             System.err.println("Uso: java DiccionarioImpl <ip_serv:puerto_serv> <ip_broker:puerto_broker>");
             System.exit(-1);
@@ -70,7 +78,7 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
 
         // Obtengo ips y puertos del servidor y el broker central
         String ip_puerto_servidor = args[0], ip_puerto_broker = args[1];
-        String url = "//" + ip_puerto_servidor + "/Diccionario";
+        String url = "//" + ip_puerto_servidor + "/Diccionario" + sufijo;
 
         // Establecer permisos y política de seguridad
         System.setProperty("java.security.policy", "./java.policy");
@@ -85,18 +93,18 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
             System.out.println("Diccionario registrado en: " + url);
 
             // Registrar servidor en el broker
-            Broker broker = (Broker) Naming.lookup("//" + ip_puerto_broker + "/Broker");
-            broker.registrar_servidor("DiccionarioServer", url);
+            Broker broker = (Broker) Naming.lookup("//" + ip_puerto_broker + "/Broker" + sufijo);
+            broker.registrar_servidor("Diccionario", url);
 
             // Dar de alta en el broker los servicios que provee el servidor
             ArrayList<String> p1 = new ArrayList<>(); p1.add("String"); p1.add("String");
             ArrayList<String> p2 = new ArrayList<>(); p2.add("String");
 
-            broker.alta_servicio("DiccionarioServer", "agnadirPalabra", p1, "void",
+            broker.alta_servicio("Diccionario", "agnadirPalabra", p1, "void",
                                  "El siguiente procedimiento guarda la \"palabra\" con su respectiva \"traduccion\" en el diccionario");
-            broker.alta_servicio("DiccionarioServer", "traducir", p2, "String",
+            broker.alta_servicio("Diccionario", "traducir", p2, "String",
                                  "Función que devuelve la traducción del parámetro pasado");
-            broker.alta_servicio("DiccionarioServer", "numPalabrasConPrefijo", p2, "int",
+            broker.alta_servicio("Diccionario", "numPalabrasConPrefijo", p2, "int",
                                  "Función que devuelve el número de palabras que comienzan por \"pref\"");
         
         }

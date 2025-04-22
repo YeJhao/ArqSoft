@@ -6,8 +6,6 @@
 //         Software. Servidor que proporciona funciones de un diccionario.
 //-------------------------------------------------------------------------------------------
 
-package servidores;
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 

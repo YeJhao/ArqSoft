@@ -6,9 +6,6 @@
 //         Software. Servidor que proporciona funciones de un inventario.
 //-------------------------------------------------------------------------------------------
 
-package servidores;
-
-import broker.Broker;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -34,10 +31,13 @@ public class InventarioImpl extends UnicastRemoteObject implements Inventario {
      */
     @Override
     public void agnadirProducto(String nombre, int uds) throws RemoteException {
-        if(inventario.containsKey(nombre))
-            inventario.put(nombre, inventario.get(nombre) + uds);
-        else
-            inventario.put(nombre, uds);
+        if(nombre == null || nombre.trim().isEmpty())
+            throw new RemoteException("El nombre de un producto no puede ser vacío o nulo.");
+        
+        if(uds <= 0)
+            throw new RemoteException("Las unidades de un producto deben ser mayor que cero.");
+
+        inventario.put(nombre, inventario.getOrDefault(nombre, 0) + uds);
     }
 
     /*
@@ -60,8 +60,10 @@ public class InventarioImpl extends UnicastRemoteObject implements Inventario {
     }
 
     /** Programa principal */
-    @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
+
+        final String sufijo = "506";
+
         if(args.length != 2) {
             System.err.println("Uso: java InventarioImpl <ip_serv:puerto_serv> <ip_broker:puerto_broker>");
             System.exit(-1);
@@ -69,7 +71,7 @@ public class InventarioImpl extends UnicastRemoteObject implements Inventario {
 
         // Obtengo ips y puertos del servidor y el broker central
         String ip_puerto_servidor = args[0], ip_puerto_broker = args[1];
-        String url = "//" + ip_puerto_servidor + "/Inventario";
+        String url = "//" + ip_puerto_servidor + "/Inventario" + sufijo;
         
         // Establecer permisos y política de seguridad
         System.setProperty("java.security.policy", "./java.policy");
@@ -84,19 +86,19 @@ public class InventarioImpl extends UnicastRemoteObject implements Inventario {
             System.out.println("Inventario registrado en: " + url);
 
             // Registrar servidor en el broker
-            Broker broker = (Broker) Naming.lookup("//" + ip_puerto_broker + "/Broker");
-            broker.registrar_servidor("InventarioServer", url);
+            Broker broker = (Broker) Naming.lookup("//" + ip_puerto_broker + "/Broker" + sufijo);
+            broker.registrar_servidor("Inventario", url);
             
             // Dar de alta en el broker los servicios que provee el servidor
             ArrayList<String> p1 = new ArrayList<>(); p1.add("String"); p1.add("int");
             ArrayList<String> p2 = new ArrayList<>(); p2.add("String");
             ArrayList<String> p3 = new ArrayList<>();
 
-            broker.alta_servicio("InventarioServer", "agnadirProducto", p1, "void",
+            broker.alta_servicio("Inventario", "agnadirProducto", p1, "void",
                                  "Procedimiento que suma la cantidad pasada al producto respectivo");
-            broker.alta_servicio("InventarioServer", "obtenerUnidades", p2, "int",
+            broker.alta_servicio("Inventario", "obtenerUnidades", p2, "int",
                                  "Función que devuelve la cantidad del producto que se busca");
-            broker.alta_servicio("InventarioServer", "listarProductos", p3, "Vector<String>",
+            broker.alta_servicio("Inventario", "listarProductos", p3, "ArrayList<String>",
                                  "Función que devuelve la lista de productos existente en el inventario");
 
         }

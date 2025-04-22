@@ -5,11 +5,10 @@
 // Coms:   Fichero interfaz de la clase Broker, de la práctica 3 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
-package broker;
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Map;
 
 public interface Broker extends Remote {
 
@@ -53,7 +52,7 @@ public interface Broker extends Remote {
      * Pre:
      * Post: Función que devuelve el nombre de todos los servicios registrados.
      */
-    public Servicios lista_servicios()
+    public Map<String, ServicioInfo> lista_servicios()
         throws RemoteException;
 
     /*

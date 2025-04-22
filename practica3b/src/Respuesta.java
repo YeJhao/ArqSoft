@@ -6,14 +6,12 @@
 //         representa el resultado de un servicio.
 //-------------------------------------------------------------------------------------------
 
-package broker;
-
 import java.io.Serializable;
 
 public class Respuesta<T> implements Serializable {
     
     /** Resultado del servicio */
-    private final T resultado;
+    private final T resultado;    
 
     /** Constructor */
     public Respuesta(T resultado) {
