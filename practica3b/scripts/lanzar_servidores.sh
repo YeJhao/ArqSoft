@@ -1,7 +1,8 @@
 #!/bin/bash
 
 RUTA="/tmp/rmi_$USER"
-MAQUINA="202"
+MAQUINA="201"
+MAQUINA_BROKER="200"
 
 # Compilar
 cd "$RUTA"
@@ -16,6 +17,6 @@ rmiregistry 1099 &
 while ! nc -z 127.0.0.1 1099; do
     sleep 1
 done
-java $FLAGS InventarioImpl  155.210.154.$MAQUINA:1099 155.210.154.200:1099 & sleep 3
-java $FLAGS DiccionarioImpl 155.210.154.$MAQUINA:1099 155.210.154.200:1099
+java $FLAGS InventarioImpl  155.210.154.$MAQUINA:1099 155.210.154.$MAQUINA_BROKER:1099 & sleep 3
+java $FLAGS DiccionarioImpl 155.210.154.$MAQUINA:1099 155.210.154.$MAQUINA_BROKER:1099
 

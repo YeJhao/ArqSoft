@@ -6,6 +6,7 @@
 //-------------------------------------------------------------------------------------------
 
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,8 +25,13 @@ public class Cliente {
     private static void ejecutarServicio(Broker broker, boolean asincrono) {
         try {
             System.out.print("Nombre del servicio: ");
-            String nom_servicio = scanner.nextLine();
+            String nom_servicio = scanner.nextLine().trim();
             
+            if(nom_servicio.isEmpty()) {
+                System.out.println("Nombre de servicio vacío.");
+                return;
+            }
+
             ServicioInfo info = serviciosMap.get(nom_servicio);
             if (info == null) {
                 System.out.println("Servicio no encontrado.");
@@ -46,9 +52,12 @@ public class Cliente {
                 }
 
                 for (int i = 0; i < tipos.size(); i++) {
-                    String tipo = tipos.get(i).toLowerCase();
-                    String valor = entrada[i];
-                    parametros.add(parsear(valor, tipo));
+                    try {
+                        parametros.add(parsear(entrada[i], tipos.get(i)));
+                    } catch (Exception e) {
+                        System.out.println("Error en parámetro " + (i + 1) + ": " + e.getMessage());
+                        return;
+                    }
                 }
             }
 
@@ -60,6 +69,8 @@ public class Cliente {
                 System.out.println("Resultado: " + respuesta);
             }
 
+        } catch (RemoteException e) {
+            System.err.println("Error de comunicación RMI: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Error al ejecutar servicio: " + e.getMessage());
         }
@@ -67,7 +78,7 @@ public class Cliente {
 
     /** Parsear parámetros */
     private static Object parsear(String valor, String tipo) {
-        return switch (tipo) {
+        return switch (tipo.toLowerCase()) {
             case "int" -> Integer.parseInt(valor);
             case "double" -> Double.parseDouble(valor);
             case "float" -> Float.parseFloat(valor);
@@ -112,76 +123,81 @@ public class Cliente {
             boolean run = true;
             while (run) { 
 
-                System.out.println(
-                    "\nMenú:"
-                    + "\n├─ Listar servicios...............1"
-                    + "\n├─ Descripción de servicio........2"
-                    + "\n├─ Ejecutar servicio (síncrono)...3"
-                    + "\n├─ Ejecutar servicio (asíncrono)..4"
-                    + "\n├─ Obtener respuesta asíncrona....5"
-                    + "\n└─ Salir..........................6"
-                );
+                System.out.println("\nMenú:");
+                System.out.println("   1................Listar servicios");
+                System.out.println("   2.........Descripción de servicio");
+                System.out.println("   3....Ejecutar servicio (síncrono)");
+                System.out.println("   4...Ejecutar servicio (asíncrono)");
+                System.out.println("   5.....Obtener respuesta asíncrona");
+                System.out.println("   6...........................Salir");
 
-                int opcion = -1;
-                while (true) {
-                    System.out.print("Introduce una opción (número entero): ");
-                    String entrada = scanner.nextLine().trim();
-                    try {
-                        opcion = Integer.parseInt(entrada);
-                        break;
-                    } catch (NumberFormatException e) {
-                        System.out.println("Opción no válida. Por favor, introduce un número entero.");
-                    }
+                System.out.print("Introduce una opción: ");
+                String entrada = scanner.nextLine().trim();
+
+                int opcion;
+                try {
+                    opcion = Integer.parseInt(entrada);
+                } catch (NumberFormatException e) {
+                    System.out.println("Opción no válida. Introduce un número.");
+                    continue;
                 }
 
-                switch(opcion) {
-                    case 1:
-                        // Listar servicios
-                        System.out.println("Servicios registrados:");
-                        for (String s : serviciosMap.keySet()) {
-                            System.out.println("- " + s);
-                        }
-                        break;
-                    case 2:
-                        // Descripción de servicio dado
-                        System.out.print("Nombre del servicio: ");
-                        String nombre = scanner.nextLine();
-                        ServicioInfo info = serviciosMap.get(nombre);
-                        if (info != null) {
-                            System.out.println(info.getDescription());
-                            System.out.println(String.join(" ", info.lista_param) + " -> " + info.tipo_retorno);
-                        } else {
-                            System.out.println("Servicio no encontrado.");
-                        }
-                        break;
-                    case 3:
-                        // Ejecutar servicio (síncrono)
-                        ejecutarServicio(broker, false);
-                        break;
-                    case 4:
-                        // Ejecutar servicio (asíncrono)
-                        ejecutarServicio(broker, true);
-                        break;
-                    case 5:
-                        // Obtener respuesta asíncrona
-                        System.out.print("Nombre del servicio: ");
-                        String nom_servicio = scanner.nextLine();
-                        Respuesta<?> respuesta = broker.obtener_respuesta_asinc(nom_servicio);
-                        System.out.println("Respuesta: " + respuesta);
-                        break;
-                    case 6:
-                        // Salir
+                switch (opcion) {
+                    case 1 -> {
+                        serviciosMap = broker.lista_servicios();
+                        listarServicios();
+                    }
+                    case 2 -> descripcionServicio();
+                    case 3 -> ejecutarServicio(broker, false);
+                    case 4 -> ejecutarServicio(broker, true);
+                    case 5 -> obtenerRespuestaAsinc(broker);
+                    case 6 -> {
                         System.out.println("Saliendo...");
                         run = false;
-                        break;
-                    default:
-                        System.out.println("¡Opción inválida!");
-                        break;
+                    }
+                    default -> System.out.println("Opción inválida.");
                 }
-
             }
         } catch (Exception e) {
             System.err.println("Error en cliente: " + e.getMessage());
+        }
+    }
+
+    /** Listar servicios disponibles */
+    private static void listarServicios() {
+        if (serviciosMap == null || serviciosMap.isEmpty()) {
+            System.out.println("No hay servicios disponibles.");
+            return;
+        }
+        System.out.println("Servicios registrados:");
+        serviciosMap.keySet().forEach(s -> System.out.println("- " + s));
+    }
+
+    /** Mostrar descripción de un servicio */
+    private static void descripcionServicio() {
+        System.out.print("Nombre del servicio: ");
+        String nombre = scanner.nextLine().trim();
+        ServicioInfo info = serviciosMap.get(nombre);
+
+        if (info != null) {
+            System.out.println(info.getDescription());
+            System.out.println(String.join(" ", info.lista_param) + " -> " + info.tipo_retorno);
+        } else {
+            System.out.println("Servicio no encontrado.");
+        }
+    }
+
+    /** Obtener respuesta asíncrona */
+    private static void obtenerRespuestaAsinc(Broker broker) {
+        try {
+            System.out.print("Nombre del servicio: ");
+            String nom_servicio = scanner.nextLine().trim();
+            Respuesta<?> respuesta = broker.obtener_respuesta_asinc(nom_servicio);
+            System.out.println("Respuesta: " + respuesta);
+        } catch (RemoteException e) {
+            System.err.println("Error de comunicación: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error inesperado al obtener respuesta: " + e.getMessage());
         }
     }
 }

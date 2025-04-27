@@ -84,6 +84,9 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
             System.out.println("Servidor no registrado: " + nombre_servidor);
             return;
         }
+        if (servicios.containsKey(nom_servicio)) {
+            System.out.println("Advertencia: Sobrescribiendo servicio ya existente: \"" + nom_servicio + "\".");
+        }
         ServicioInfo sinfo = new ServicioInfo(
             nombre_servidor, nom_servicio, lista_param, tipo_retorno, url, description);
         servicios.put(nom_servicio, sinfo);
@@ -168,6 +171,35 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker {
             throw new RemoteException("Error: Método no encontrado en objeto remoto para servicio \"" + nom_servicio + "\".");
         }
         catch (Exception e) {
+
+            // Si los servidores que han dado de alta los servicios en el broker terminan su ejecución (p.e. Ctrl C) o fallan,
+            // la ejecución de los servicios fallará, pero seguirán apareciendo en el listado de servicios disponibles. Añadimos
+            // el siguiente bloque de código para que si un servicio falla se desuscriba del broker y se elimine del listado.
+            if(
+                e instanceof java.rmi.ConnectException ||
+                e instanceof java.rmi.ConnectIOException ||
+                e instanceof java.rmi.UnmarshalException ||
+                e instanceof java.rmi.UnknownHostException
+            ) {
+                ServicioInfo sinfo = servicios.get(nom_servicio);
+                if (sinfo != null) {
+                    System.err.println("Servidor \"" + sinfo.nom_servidor + "\" no accesible. Eliminando todos sus servicios del Broker.");
+                    ArrayList<String> serviciosAsociados = new ArrayList<>();
+
+                    // Buscar todos los servicios del servidor caído
+                    for (Map.Entry<String, ServicioInfo> entry : servicios.entrySet()) {
+                        if (entry.getValue().nom_servidor.equals(sinfo.nom_servidor))
+                            serviciosAsociados.add(entry.getKey());
+                    }
+
+                    // Dar de baja cada servicio
+                    for (String servicio : serviciosAsociados)
+                        baja_servicio(sinfo.nom_servidor, servicio);
+
+                    servidores.remove(sinfo.nom_servidor);
+                }
+            }
+
             throw new RemoteException("Error: " + e.getMessage());
         }
     }

@@ -29,18 +29,16 @@ Broker (lab102-200):
 3)   cd /tmp/rmi_a<NIP>
 4)   ./lanzar_broker.sh
 
-Servidores (lab102-202):
+Servidores (lab102-201):
+
+1)   ssh a<NIP>@central.cps.unizar.es
+2)   ssh lab102-201
+3)   cd /tmp/rmi_a<NIP>
+4)   ./lanzar_servidores.sh
+
+Cliente (lab102-202):
 
 1)   ssh a<NIP>@central.cps.unizar.es
 2)   ssh lab102-202
 3)   cd /tmp/rmi_a<NIP>
 4)   ./lanzar_servidores.sh
-
-Cliente (lab102-203):
-
-1)   ssh a<NIP>@central.cps.unizar.es
-2)   ssh lab102-203
-3)   cd /tmp/rmi_a<NIP>
-4)   ./lanzar_servidores.sh
-
---------TEXTO----------------

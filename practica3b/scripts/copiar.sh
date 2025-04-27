@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MAQUINAS=("lab102-200" "lab102-202" "lab102-203")
+MAQUINAS=("lab102-200" "lab102-201" "lab102-202")
 RUTA="/tmp/rmi_$USER"
 
 # Copiamos los ficheros fuente y scripts en las máquinas que usaremos

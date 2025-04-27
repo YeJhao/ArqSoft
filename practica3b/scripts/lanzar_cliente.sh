@@ -1,7 +1,7 @@
 #!/bin/bash
 
 RUTA="/tmp/rmi_$USER"
-MAQUINA_CLIENT="203"
+MAQUINA_CLIENT="202"
 MAQUINA_BROKER="200"
 
 # Compilar

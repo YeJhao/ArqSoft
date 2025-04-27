@@ -104,8 +104,10 @@ public class DiccionarioImpl extends UnicastRemoteObject implements Diccionario 
                                  "El siguiente procedimiento guarda la \"palabra\" con su respectiva \"traduccion\" en el diccionario");
             broker.alta_servicio("Diccionario", "traducir", p2, "String",
                                  "Función que devuelve la traducción del parámetro pasado");
-            broker.alta_servicio("Diccionario", "numPalabrasConPrefijo", p2, "int",
-                                 "Función que devuelve el número de palabras que comienzan por \"pref\"");
+            
+            // Descomentar para demostrar que se puede recompilar el servidor sin necesidad de recompilar y relanzar el broker y cliente
+            /*broker.alta_servicio("Diccionario", "numPalabrasConPrefijo", p2, "int",
+                                 "Función que devuelve el número de palabras que comienzan por \"pref\"");*/
         
         }
         catch (Exception e) {
