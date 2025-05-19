@@ -5,22 +5,20 @@
 // Coms:   Fichero java de la clase Cola, de la práctica 4 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
-import java.io.Serializable;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.ClassNotFoundException;
-
-import java.util.Queue;
-import java.util.LinkedList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Cola implements Serializable {
@@ -175,8 +173,6 @@ public class Cola implements Serializable {
         }
         return disponibles;
     }
-
-    /
 
     /****************************************
      * Métodos privados                     *

@@ -9,6 +9,7 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.function.Consumer;
+import java.util.Random;
 
 public class ConsumidorImpl extends UnicastRemoteObject implements Consumidor {
 
@@ -68,7 +69,19 @@ public class ConsumidorImpl extends UnicastRemoteObject implements Consumidor {
 
             // Definir comportamiento del consumidor (callback)
             Consumer<String> logica = mensaje -> {
-                // {Podría ser cualquier comportamiento}
+                Random rand = new Random();
+                int tiempoTotal = 30 + rand.nextInt(61); // entre 30 y 90 segundos
+                long tiempoFin = System.currentTimeMillis() + tiempoTotal * 1000L;
+                String[] puntos = {"", ".", "..", "..."};
+                int i = 0;
+                try {
+                    while(System.currentTimeMillis() < tiempoFin) {
+                        System.out.println("Haciendo algo con el mensaje \"" + mensaje + "\"" + puntos[i % puntos.length]);
+                        i++; Thread.sleep(3000); // Cada 3 segundos
+                    }
+                } catch (InterruptedException e) {
+                    System.err.println("Procesamiento interrumpido.");
+                }
             };
 
             // Crear consumidor remoto y asociarlo a la cola
