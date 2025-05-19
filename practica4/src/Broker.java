@@ -1,7 +1,7 @@
 //-------------------------------------------------------------------------------------------
 // File:   Broker.java
 // Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
-// Date:   6 de mayo de 2025
+// Date:   19 de mayo de 2025
 // Coms:   Fichero interfaz de la clase Broker, de la práctica 4 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public interface Broker extends Remote {
 
     /*
-     * Pre:  Dado una cadena de caracteres "queueName" identificando una cola que se quiere crear
+     * Pre:  Dado una cadena de caracteres "queueName" identificando una cola que se quiere crear.
      * Post: Procedimieno que crea una cola con "queueName" si no existe, en caso contrario
      *       no hace nada.
      */
@@ -25,9 +25,9 @@ public interface Broker extends Remote {
     public void publicar(String queueName, String msg) throws RemoteException;
 
     /*
-     * Pre:  Dada cola identificada por "queueName" que ha sido declarada mediante declarar_cola
+     * Pre:  Dada uns cola identificada por "queueName" que ha sido declarada previamente.
      * Post: Registra al objeto consumidor remoto como suscriptor de la cola. El broker invocará
-     *       su método callback cuando lleguen mensajes nuevos  y siguiendo política fair dispatch.
+     *       su método callback cuando lleguen mensajes nuevos y siguiendo política fair dispatch.
      */
     public void consumir(String queueName, Consumidor consumidor) throws RemoteException;
 
@@ -37,7 +37,6 @@ public interface Broker extends Remote {
      *       ninguna cola disponible, devuelve una lista vacía.
      */
     public ArrayList<String> listar_colas() throws RemoteException;
-
 
     /*
      * Pre:  ---

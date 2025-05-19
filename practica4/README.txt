@@ -7,8 +7,8 @@
 
 # INTRODUCCIÓN
 El código fuente presentado implementa los componentes de un broker de mensajes
-(Message-Oriented Middleware, MOM).La práctica presenta una versión básica y una
-serie de adiciones que se pueden añadir para llegar a una versión avanzada.
+(Message-Oriented Middleware, MOM). La práctica presenta una versión básica y una serie de
+adiciones que se pueden añadir para llegar a una versión avanzada.
 
 Hemos añadido:
  1. Listado de colas existentes

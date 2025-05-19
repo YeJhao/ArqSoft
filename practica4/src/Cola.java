@@ -1,7 +1,7 @@
 //-------------------------------------------------------------------------------------------
 // File:   Cola.java
 // Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
-// Date:   6 de mayo de 2025
+// Date:   19 de mayo de 2025
 // Coms:   Fichero java de la clase Cola, de la práctica 4 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
@@ -62,14 +62,14 @@ public class Cola implements Serializable {
 
     /**
      * Pre:  ---
-     * Post: Devuelve el nombre de la cola
+     * Post: Devuelve el nombre de la cola.
      */
     public String getNombre() { return nombre; }
 
     /**
-     * Pre:  mensaje no es null
+     * Pre:  "msg" no es null.
      * Post: Añade el mensaje "msg" a la cola con una marca de tiempo y 
-     *       lo guarda en disco (Versión avanzada: durability)
+     *       lo guarda en disco (Versión avanzada: durability).
      */
     public void encolar(String msg) {
         mensajes.offer(new Mensaje(msg, System.currentTimeMillis()));
@@ -80,7 +80,7 @@ public class Cola implements Serializable {
      * Pre:  ---
      * Post: Entrega un mensaje al consumidor si no está ocupado. Si está
      *       disponible marca el mensaje como pendiente de ack. Si no hay
-     *       consumidores disponibles durante 5 minutos descarta el mensaje
+     *       consumidores disponibles durante 5 minutos descarta el mensaje.
      */
     public String entregarMensaje(Consumidor consumidor) {
         if(mensajes.isEmpty() || ocupados.contains(consumidor)) {
@@ -144,8 +144,8 @@ public class Cola implements Serializable {
     }
 
     /**
-     * Pre:  Consumidor "c" no es null
-     * Post: Añade el consumidor a la lista de consumidores suscritos a esa cola
+     * Pre:  Consumidor "c" no es null.
+     * Post: Añade el consumidor a la lista de consumidores suscritos a esa cola.
      */
     public void registrarConsumidor(Consumidor c) {
         consumidores.add(c);
@@ -153,7 +153,7 @@ public class Cola implements Serializable {
 
     /**
      * Pre:  ---
-     * Post: Devuelve true si y solo si hay al menos un consumidor registrado
+     * Post: Devuelve true si y solo si hay al menos un consumidor registrado.
      */
     public boolean tieneConsumidores() {
         return !consumidores.isEmpty();
@@ -180,7 +180,7 @@ public class Cola implements Serializable {
 
     /**
      * Pre:
-     * Post:
+     * Post: Devuelve una cadena de caracteres, con la ruta en la que se almacena la cola.
      */
     private String getRuta() {
         return "data/cola_" + nombre + ".dat";
@@ -188,7 +188,7 @@ public class Cola implements Serializable {
 
     /**
      * Pre:
-     * Post:
+     * Post: Procedimiento que guarda los datos de la cola de forma persistente (fichero).
      */
     private void guardar() {
         try(ObjectOutputStream out = new ObjectOutputStream(
@@ -203,7 +203,7 @@ public class Cola implements Serializable {
 
     /**
      * Pre:
-     * Post:
+     * Post: El siguiente procedimiento saca los datos de la cola de memoria (fichero).
      */
     private void cargar() {
         File archivo = new File(getRuta());
@@ -226,6 +226,7 @@ public class Cola implements Serializable {
         private final String content;
         private final long time;
 
+        /** Constructor */
         public Mensaje(String content, long time) {
             this.content = content;
             this.time = time;

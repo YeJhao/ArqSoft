@@ -1,8 +1,8 @@
 //-------------------------------------------------------------------------------------------
 // File:   BrokerImpl.java
 // Author: Jorge Soria Romeo (872016) y Jiahao Ye (875490)
-// Date:   6 de mayo de 2025
-// Coms:   Fichero java BrokerImpl, de la práctica 4 de Arquitectura Software.
+// Date:   19 de mayo de 2025
+// Coms:   Fichero implementación de la clase Broker, de la práctica 4 de Arquitectura Software.
 //-------------------------------------------------------------------------------------------
 
 import java.io.Serializable;
@@ -28,13 +28,13 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
     }
 
     /*
-     * Pre:  Dado una cadena de caracteres "queueName" identificando una cola que se quiere crear
+     * Pre:  Dado una cadena de caracteres "queueName" identificando una cola que se quiere crear.
      * Post: Procedimieno que crea una cola con "queueName" si no existe, en caso contrario
      *       no hace nada.
      */
     @Override
     public void declarar_cola(String queueName) throws RemoteException {
-        if(colas.containsKey(queueName)) {
+        if (colas.containsKey(queueName)) {
             throw new RemoteException("La cola \"" + queueName + "\" ya está declarada.");
         }
         colas.put(queueName, new Cola(queueName));
@@ -47,24 +47,28 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
     @Override
     public void publicar(String queueName, String msg) throws RemoteException {
         Cola cola = colas.get(queueName);
-        if(cola == null) {
+
+        if (cola == null) {
             throw new RemoteException("No existe la cola \"" + queueName + "\".");
         }
+        
         cola.encolar(msg);
         entregarPendiente(cola);
     }
 
     /*
-     * Pre:  Dada cola identificada por "queueName" que ha sido declarada mediante declarar_cola
+     * Pre:  Dada uns cola identificada por "queueName" que ha sido declarada previamente.
      * Post: Registra al objeto consumidor remoto como suscriptor de la cola. El broker invocará
-     *       su método callback cuando lleguen mensajes nuevos  y siguiendo política fair dispatch.
+     *       su método callback cuando lleguen mensajes nuevos y siguiendo política fair dispatch.
      */
     @Override
     public void consumir(String queueName, Consumidor consumidor) throws RemoteException {
         Cola cola = colas.get(queueName);
-        if(cola == null) {
+
+        if (cola == null) {
             throw new RemoteException("No existe la cola \"" + queueName + "\".");
         }
+
         cola.registrarConsumidor(consumidor);
         entregarPendiente(cola);
     }
@@ -88,12 +92,15 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
     @Override
     public void acknowledgement(String queueName, String msg) throws RemoteException {
         Cola cola = colas.get(queueName);
-        if(cola == null) {
+
+        if (cola == null) {
             throw new RemoteException("No existe la cola \"" + queueName + "\".");
         }
-        for(Consumidor c : cola.getConsumidoresDisponibles()) {
+
+        for (Consumidor c : cola.getConsumidoresDisponibles()) {
             cola.confirmarACK(msg, c);
         }
+
         entregarPendiente(cola);
     }
 
@@ -101,7 +108,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
      * Métodos privados
      ******************************/
 
-    /**
+    /*
      * Pre:  La cola ha sido declarada y tiene consumidores registrados.
      * Post: Intenta entregar un mensaje a cada consumidor disponible. Si lo consigue,
      *       marca el mensaje como pendiente de ACK y lo envía mediante callback remoto.
@@ -110,24 +117,28 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
         for(Consumidor c : cola.getConsumidoresDisponibles()) {
             try {
                 String msg = cola.entregarMensaje(c);
-                if(msg != null) {
+
+                if (msg != null) {
                     c.callback(msg);
                 }
-            } catch(RemoteException e) {
+            }
+            catch(RemoteException e) {
                 System.err.println("Error entregando mensaje: " + e.getMessage());
             }
         }
     }
 
-    /**
+    /*
      * Pre:  ---
      * Post: Carga del disco todas las colas previamente persistidas en el
-     *       directorio data/ para restaurar su estado (message durability)
+     *       directorio "data/" para restaurar su estado (message durability).
      */
     private void cargarColasExistentes() {
         File carpeta = new File("data");
+
         if(!carpeta.exists()) carpeta.mkdir();
-        for(File f : carpeta.listFiles()) {
+        
+        for (File f : carpeta.listFiles()) {
             if(f.getName().startsWith("cola_") && f.getName().endsWith(".dat")) {
                 String nombre = f.getName().substring(5, f.getName().length() - 4);
                 colas.put(nombre, new Cola(nombre));
@@ -135,7 +146,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
         }
     }
 
-    /**
+    /*
      * Pre:  ---
      * Post: Inicia un hilo programado que, cada 10 segundos, revisa los mensajes
      *       entregados que no han recibido ACK. Si alguno ha expirado, se reencola y
@@ -143,8 +154,9 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
      */
     private void iniciarReintentoPeriodico() {
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(()->{
-            for(Cola cola : colas.values()) {
+            for (Cola cola : colas.values()) {
                 List<String> reentregas = cola.recuperarMensajesExpirados();
+                
                 if(!reentregas.isEmpty()) {
                     entregarPendiente(cola);
                 }
