@@ -16,4 +16,10 @@ public interface Consumidor extends Remote {
      *       con un ACK al broker tras procesar exitosamente el mensaje.
      */
     public void callback(String msg) throws RemoteException;
+
+    /**
+     * Pre: ---
+     * Post: Devuelve una cadena para identificar al consumidor
+     */
+    public String getId() throws RemoteException;
 }

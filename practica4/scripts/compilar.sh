@@ -1,6 +1,7 @@
 #!/bin/bash
 
-echo "Compilando..."
+echo "Compilando código fuente"
 mkdir -p bin
-javac -d bin *.java
-echo "¡Compilación lista!"
+javac -d bin src/*.java > /dev/null 2>&1
+cp src/java.policy bin/
+echo "¡Compilación completada!"

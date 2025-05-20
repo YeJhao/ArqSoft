@@ -1,22 +1,11 @@
 #!/bin/bash
 
-read -p "Introduce la IP completa de la máquina del broker (ej: 155.210.154.200): " IP
+read -p "Introduce la IP y puerto del broker (ej: 155.210.154.200:1099): " HOSTPORT
 read -p "Introduce el nombre del consumidor: " NOMCONSUMER
-read -p "Introduce el nombre de la cola: " NOMCOLA 
+read -p "Introduce el nombre de la cola: " NOMCOLA
 
-RUTA="/tmp/brokerMsg_$USER"
+cd bin || { echo "No se encontró el directorio bin"; exit 1; }
 
-# Compilar
-cd "$RUTA"
-chmod +x *.sh
-./compilar.sh
+FLAGS="-Djava.security.manager=default -Djava.security.policy=java.policy"
 
-# Ejecutar broker
-FLAGS="-Djava.security.manager=default -Djava.security.policy=../java.policy"
-cd bin
-pkill -f rmiregistry
-rmiregistry 1099 &
-while ! nc -z 127.0.0.1 1099; do
-    sleep 1
-done
-java $FLAGS ConsumidorImpl "$NOMCONSUMER" "$NOMCOLA" "$IP" 1099
+java $FLAGS ConsumidorImpl "$NOMCONSUMER" "$NOMCOLA" "$HOSTPORT"

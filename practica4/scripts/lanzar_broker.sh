@@ -1,18 +1,18 @@
 #!/bin/bash
 
-RUTA="/tmp/brokerMsg_$USER"
+read -p "Introduce el host y puerto para el broker (ej: 155.210.154.200:1099): " HOSTPORT
 
-# Compilar
-cd "$RUTA"
-chmod +x *.sh
-./compilar.sh
+cd bin || { echo "No se encontró el directorio bin"; exit 1; }
 
-# Ejecutar broker
-FLAGS="-Djava.security.manager=default -Djava.security.policy=../java.policy"
-cd bin
+FLAGS="-Djava.security.manager=default -Djava.security.policy=java.policy"
+
+PORT="${HOSTPORT##*:}"
+
 pkill -f rmiregistry
-rmiregistry 1099 &
-while ! nc -z 127.0.0.1 1099; do
+rmiregistry "$PORT" &
+
+while ! nc -z 127.0.0.1 "$PORT"; do
     sleep 1
 done
-java $FLAGS ConsumidorImpl "$NOMCONSUMER" "$NOMCOLA" "127.0.0.1:1099"
+
+java $FLAGS BrokerImpl "$HOSTPORT"

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -35,8 +36,8 @@ public class Cola implements Serializable {
      */
     private Map<String, Long> pendientes = new HashMap<>();
 
-    private transient List<Consumidor> consumidores = new ArrayList<>();
-    private transient Set<Consumidor> ocupados = ConcurrentHashMap.newKeySet();
+    private transient Map<String, Consumidor> consumidores = new ConcurrentHashMap<>();
+    private transient Set<String> ocupados = ConcurrentHashMap.newKeySet();
 
     /** 
      * Tiempo que puede durar un mensaje en la cola sin consumidores
@@ -83,28 +84,29 @@ public class Cola implements Serializable {
      *       consumidores disponibles durante 5 minutos descarta el mensaje.
      */
     public String entregarMensaje(Consumidor consumidor) {
-        if(mensajes.isEmpty() || ocupados.contains(consumidor)) {
-            return null;
-        }
+        try {
+            if(mensajes.isEmpty() || ocupados.contains(consumidor.getId()))
+                return null;
 
-        Mensaje msg = mensajes.peek();
-        if(msg == null) {
-            return null;
-        }
+            Mensaje msg = mensajes.peek();
+            if(msg == null) return null;
 
-        if(!tieneConsumidores()) {
-            if(System.currentTimeMillis() - msg.getTime() > TIMEOUT_NO_CONSUMIDOR) {
-                mensajes.poll();
-                guardar();
+            if(!tieneConsumidores()) {
+                if(System.currentTimeMillis() - msg.getTime() > TIMEOUT_NO_CONSUMIDOR) {
+                    mensajes.poll();
+                    guardar();
+                }
+                return null;
             }
+
+            mensajes.poll();
+            pendientes.put(msg.getContent(), System.currentTimeMillis());
+            ocupados.add(consumidor.getId());
+            guardar();
+            return msg.getContent();
+        } catch(RemoteException e) {
             return null;
         }
-
-        mensajes.poll();
-        pendientes.put(msg.getContent(), System.currentTimeMillis());
-        ocupados.add(consumidor);
-        guardar();
-        return msg.getContent();
     }
 
     /**
@@ -112,11 +114,13 @@ public class Cola implements Serializable {
      * Post: Elimina el mensaje de pendientes y libera al consumidor para
      *       que pueda procesar nuevos mensajes.
      */
-    public void confirmarACK(String mensaje, Consumidor consumidor) {
+    public boolean  confirmarACK(String mensaje, String consumidorId) {
         if(pendientes.remove(mensaje) != null) {
-            ocupados.remove(consumidor);
+            ocupados.remove(consumidorId);
             guardar();
+            return true;
         }
+        return false;
     }
 
     /**
@@ -148,7 +152,9 @@ public class Cola implements Serializable {
      * Post: Añade el consumidor a la lista de consumidores suscritos a esa cola.
      */
     public void registrarConsumidor(Consumidor c) {
-        consumidores.add(c);
+        try {
+        consumidores.put(c.getId(), c);
+        } catch(RemoteException e) {}
     }
 
     /**
@@ -166,12 +172,21 @@ public class Cola implements Serializable {
      */
     public List<Consumidor> getConsumidoresDisponibles() {
         List<Consumidor> disponibles = new ArrayList<>();
-        for(Consumidor c : consumidores) {
-            if(!ocupados.contains(c)) {
-                disponibles.add(c);
+        for(Map.Entry<String, Consumidor> entry : consumidores.entrySet()) {
+            if(!ocupados.contains(entry.getKey())) {
+                disponibles.add(entry.getValue());
             }
         }
+        System.out.println("Disponibles: " + disponibles.size());
         return disponibles;
+    }
+
+    /**
+     * Pre:  ---
+     * Post: Devuelve todos los consumidores suscritos a la cola de mensajes
+     */
+    public List<Consumidor> getConsumidores() {
+        return new ArrayList<>(consumidores.values());
     }
 
     /****************************************
@@ -216,6 +231,8 @@ public class Cola implements Serializable {
         } catch(IOException | ClassNotFoundException e) {
             System.err.println("Error cargando cola \"" + nombre + "\": " + e.getMessage());
         }
+        ocupados = ConcurrentHashMap.newKeySet();
+        consumidores = new ConcurrentHashMap<>();
     }
 
     /****************************************

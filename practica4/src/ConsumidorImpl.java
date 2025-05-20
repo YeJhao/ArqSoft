@@ -10,6 +10,8 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.function.Consumer;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ConsumidorImpl extends UnicastRemoteObject implements Consumidor {
 
@@ -17,6 +19,8 @@ public class ConsumidorImpl extends UnicastRemoteObject implements Consumidor {
     private final Broker broker;
     private final String queueName;
     private final Consumer<String> callbackFunction;
+
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     /** Constructor */
     public ConsumidorImpl(String nombre, Broker broker, String queueName, Consumer<String> callbackFunction)
@@ -33,17 +37,30 @@ public class ConsumidorImpl extends UnicastRemoteObject implements Consumidor {
      * Post: El consumidor procesa el mensaje recibido. Debería responder
      *       con un ACK al broker tras procesar exitosamente el mensaje.
      */
+    @Override
     public void callback(String msg) throws RemoteException {
-        System.out.println(nombre + "-> Mensaje recibido: \"" + msg + "\"");
+        executor.submit(() -> {
+            try {
+                if (callbackFunction != null) {
+                    callbackFunction.accept(msg);
+                }
 
-        // Ejecutar la función de usuario
-        if(callbackFunction != null) {
-            callbackFunction.accept(msg);
-        }
+                System.out.println(nombre + " -> ACK enviado tras procesar: \"" + msg + "\"");
+                broker.acknowledgement(queueName, msg, this.nombre);
 
-        // Al terminar enviar ACK
-        broker.acknowledgement(queueName, msg);
-        System.out.println(nombre + "-> ACK enviado tras procesar: \"" + msg + "\"");
+            } catch (Exception e) {
+                System.err.println("Error en procesamiento o ACK: " + e.getMessage());
+            }
+        });           
+    }
+
+    /**
+     * Pre: ---
+     * Post: Devuelve una cadena para identificar al consumidor
+     */
+    @Override
+    public String getId() throws RemoteException {
+        return this.nombre;
     }
 
     /** Main del consumidor remoto */
@@ -70,18 +87,20 @@ public class ConsumidorImpl extends UnicastRemoteObject implements Consumidor {
             // Definir comportamiento del consumidor (callback)
             Consumer<String> logica = mensaje -> {
                 Random rand = new Random();
-                int tiempoTotal = 30 + rand.nextInt(61); // entre 30 y 90 segundos
-                long tiempoFin = System.currentTimeMillis() + tiempoTotal * 1000L;
+                int tiempoTotal = 5 + rand.nextInt(11); // entre 5 y 15 segundos
                 String[] puntos = {"", ".", "..", "..."};
-                int i = 0;
-                try {
-                    while(System.currentTimeMillis() < tiempoFin) {
-                        System.out.println("Haciendo algo con el mensaje \"" + mensaje + "\"" + puntos[i % puntos.length]);
-                        i++; Thread.sleep(3000); // Cada 3 segundos
+                System.out.println("Procesando mensaje: \"" + mensaje + "\"");
+                for (int i = 1; i <= tiempoTotal; i++) {
+                    String animacion = puntos[i % puntos.length];
+                    System.out.print(String.format("\rTiempo: %2d/%2d segundos %s", i, tiempoTotal, animacion));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        System.err.println("\nProcesamiento interrumpido.");
+                        return;
                     }
-                } catch (InterruptedException e) {
-                    System.err.println("Procesamiento interrumpido.");
                 }
+                System.out.println("\nProcesamiento finalizado para: \"" + mensaje + "\"");
             };
 
             // Crear consumidor remoto y asociarlo a la cola

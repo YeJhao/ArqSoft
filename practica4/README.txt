@@ -25,44 +25,34 @@ Hemos añadido:
 
 # Compilación y ejecución
 
-1. Pasar el código fuente con scp a aNIP@lab000.cps.unizar.es
-2. Encender las máquinas de lab102 de tu elección que vas a emplear
-       
-        >> cd scripts; chmod +x *.sh
+1. Pasar el código fuente a las máquinas de tu elección
 
-        >> ./gestionar_maquinas.sh
-               Selecciona una máquina del lab102 (ej: 200): 
-               >> 200
-               Selecciona opción ON o OFF para lab102-200:
-               >> ON
+2. Dar permisos de ejecución
+>> chmod +x scripts/*.sh
 
-        >> ./gestionar_maquinas.sh
-               Selecciona una máquina del lab102 (ej: 200): 
-               >> 201
-               Selecciona opción ON o OFF para lab102-201:
-               >> ON
+3. Compilar en las distintas máquinas
+>> ./scripts/compilar.sh
 
-        >> ./gestionar_maquinas.sh
-               Selecciona una máquina del lab102 (ej: 200): 
-               >> 202
-               Selecciona opción ON o OFF para lab102-202:
-               >> ON
+4. Lanzar el broker
+>> ./scripts/lanzar_broker.sh
 
-3. Copiar el código fuente a /tmp/brokerMsg_$USER de esas máquinas
-        
-        >> ./copiar.sh
-               Introduce las máquinas separadas por espacios (ej: lab102-200 lab103-201 una_ip_cualquiera): 
-               >> lab102-200 lab102-201 lab102-202
+5. Lanzar el productor
+>> ./scripts/lanzar_productor.sh
 
-4. (desde lab000) ssh lab102-200;
-   cd /tmp/brokerMsg_a<NIP>
-   ./lanzar_broker.sh
+6. Lanzar el consumidor
+>> ./scripts/lanzar_consumidor.sh
 
+Al lanzar el script lanzar_broker.sh, se te pedirá vía terminal
+   -> ip:puerto donde se ejecutará el broker.
 
-5. (desde lab000) ssh lab102-201
-   cd /tmp/brokerMsg_a<NIP>
-   ./lanzar_productor.sh
+Al lanzar el script lanzar_productor.sh, se te pedirá vía terminal
+   -> ip:puerto de la maquina donde se está ejecutando el broker
 
-6. (desde lab000) ssh lab102-202
-   cd /tmp/brokerMsg_a<NIP>
-   ./lanzar_consumidor.sh
+Al lanzar el script lanzar_consumidor.sh, se te pedirá vía terminal
+   -> ip:puerto de la maquina donde se está ejecutando el broker
+   -> nombre del consumidor (a tu elección)
+   -> nombre de la cola de mensajes a la que deseas suscribirte
+       -> Deberás antes crear una nueva cola usando el menú del productor
+          Por eso es mejor ejecutar antes lanzar_productor.sh
+
+Se pueden lanzar múltiples consumidores y productores.

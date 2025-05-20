@@ -1,15 +1,9 @@
 #!/bin/bash
 
-read -p "Introduce la IP completa de la máquina del broker (ej: 155.210.154.200): " IP
+read -p "Introduce la IP y puerto del broker (ej: 155.210.154.200:1099): " HOSTPORT
 
-RUTA="/tmp/brokerMsg_$USER"
+cd bin || { echo "No se encontró el directorio bin"; exit 1; }
 
-# Compilar
-cd "$RUTA"
-chmod +x *.sh
-./compilar.sh
+FLAGS="-Djava.security.manager=default -Djava.security.policy=java.policy"
 
-# Ejecutar cliente
-FLAGS="-Djava.security.manager=default -Djava.security.policy=../java.policy"
-cd bin
-java $FLAGS Productor "${IP}:1099"
+java $FLAGS Productor "$HOSTPORT"

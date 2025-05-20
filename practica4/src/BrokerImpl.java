@@ -90,18 +90,19 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
      *       del mensaje. Si el mensaje no estaba pendiente, la operación no tiene efecto.
      */
     @Override
-    public void acknowledgement(String queueName, String msg) throws RemoteException {
+    public void acknowledgement(String queueName, String msg, String consumidorId) throws RemoteException {
         Cola cola = colas.get(queueName);
 
         if (cola == null) {
             throw new RemoteException("No existe la cola \"" + queueName + "\".");
         }
 
-        for (Consumidor c : cola.getConsumidoresDisponibles()) {
-            cola.confirmarACK(msg, c);
+        if (cola.confirmarACK(msg, consumidorId)) {
+            System.out.println("ACK para mensaje \"" + msg + "\" recibido de consumidor \"" + consumidorId + "\" en cola \"" + queueName + "\"");
+            entregarPendiente(cola);
+        } else {
+            System.err.println("No se pudo confirmar ACK para mensaje \"" + msg + "\" de consumidor \"" + consumidorId + "\" en cola \"" + queueName + "\".");
         }
-
-        entregarPendiente(cola);
     }
 
     /******************************
@@ -113,7 +114,7 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
      * Post: Intenta entregar un mensaje a cada consumidor disponible. Si lo consigue,
      *       marca el mensaje como pendiente de ACK y lo envía mediante callback remoto.
      */
-    private void entregarPendiente(Cola cola) {
+    /*private void entregarPendiente(Cola cola) {
         for(Consumidor c : cola.getConsumidoresDisponibles()) {
             try {
                 String msg = cola.entregarMensaje(c);
@@ -121,10 +122,30 @@ public class BrokerImpl extends UnicastRemoteObject implements Broker, Serializa
                 if (msg != null) {
                     c.callback(msg);
                 }
+                return;
             }
             catch(RemoteException e) {
                 System.err.println("Error entregando mensaje: " + e.getMessage());
             }
+        }
+    }*/
+    private void entregarPendiente(Cola cola) {
+        synchronized (cola) {
+            boolean entregado;
+            do {
+                entregado = false;
+                for (Consumidor c : cola.getConsumidoresDisponibles()) {
+                    try {
+                        String msg = cola.entregarMensaje(c);
+                        if (msg != null) {
+                            c.callback(msg);
+                            entregado = true;
+                        }
+                    } catch (RemoteException e) {
+                        System.err.println("Error entregando mensaje: " + e.getMessage());
+                    }
+                }
+            } while (entregado);
         }
     }
 

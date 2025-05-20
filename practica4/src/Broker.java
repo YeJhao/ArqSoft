@@ -44,5 +44,5 @@ public interface Broker extends Remote {
      *       "queueName", considerándolo entregado correctamente. Este proceso completa la entrega
      *       del mensaje. Si el mensaje no estaba pendiente, la operación no tiene efecto.
      */
-    public void acknowledgement(String queueName, String msg) throws RemoteException;
+    public void acknowledgement(String queueName, String msg, String consumidorId) throws RemoteException;
 }
